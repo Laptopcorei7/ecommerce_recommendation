@@ -1,0 +1,16 @@
+# Model service: training pipeline + FastAPI inference.
+# Python 3.13. Install:  pip install -r ml_api/requirements.txt
+
+# --- inference ---
+fastapi==0.121.2
+uvicorn[standard]==0.38.0
+pydantic==2.12.4
+
+# --- numerics (training + inference) ---
+numpy==2.2.6
+scipy==1.15.3
+
+# --- training only ---
+pandas==2.3.3
+pyarrow==21.0.0
+scikit-learn==1.7.2

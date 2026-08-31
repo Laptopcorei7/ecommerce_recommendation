@@ -1,0 +1,18 @@
+{
+  "alpha": 0.699999988079071,
+  "k": 10,
+  "rmse": 1.3035464857715244,
+  "mae": 0.9598459742440923,
+  "rating_pairs": 77450,
+  "users_evaluated": 4000,
+  "precision_at_k": 0.00042500000000000003,
+  "recall_at_k": 0.00425,
+  "ndcg_at_k": 0.0020166285671714347,
+  "hit_rate_at_k": 0.00425,
+  "score_scale": {
+    "collab_spread_mean": 2.4152352809906006,
+    "content_spread_mean": 2.407883857488632,
+    "ratio": 0.9969562288362427,
+    "content_identical_across_users": false
+  }
+}

@@ -1,2 +1,55 @@
+# ---- data ----
+# Raw corpora and derived artefacts are downloaded, never committed.
+# SOURCES.md is the exception: it records where the data came from, which is
+# the part that must survive in the repository.
+data/*
+!data/raw/
+data/raw/*
+!data/raw/SOURCES.md
+*.jsonl
+*.jsonl.gz
+*.csv.gz
+
+# ---- models ----
+# The trained model is a build output. See ml_api/README for how to rebuild it.
+*.npz
+
+# ---- python ----
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
 env/
-ml_api/__pycache
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ---- django ----
+db.sqlite3
+db.sqlite3-journal
+/staticfiles/
+/media/
+
+# ---- node / next ----
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- env & secrets ----
+.env
+.env.*
+!.env.example
+
+# ---- editors / os ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

@@ -1,68 +1,126 @@
-import os
-from typing import List
+"""Model service.
 
-import numpy as np
+Serves recommendations as full product objects, not bare ids. The previous
+version returned a list of ASIN strings, which the storefront had no way to
+render, which is part of why the storefront never called it.
+
+Run:  uvicorn ml_api.main:app --port 8001 --reload
+Port 8001 deliberately: Django's runserver takes 8000.
+"""
+
+from __future__ import annotations
+
+import os
+from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
-from ml_api.model_loader import load_model
+from ml_api.model_loader import ModelFormatError, load_catalog, load_model
+from ml_api.recommender import HybridRecommender
 
-app = FastAPI()
+HERE = Path(__file__).resolve().parent
+MODEL_PATH = Path(os.getenv("MODEL_PATH", HERE / "artifacts" / "model.npz"))
+CATALOG_PATH = Path(os.getenv("CATALOG_PATH", HERE / "artifacts" / "catalog.jsonl"))
 
-# Load model
-model_path = os.path.join(
-    os.path.dirname(__file__), "hybrid_recommender_optimized.npz"
-)
-model = load_model(model_path)
+state = {"engine": None, "catalog": {}, "error": None}
+
+
+@asynccontextmanager
+async def lifespan(app):
+    """Load at startup, but keep a failure serviceable.
+
+    Loading at import time meant any problem with the model file killed the
+    worker with a traceback and no way to ask what was wrong. Now /health says.
+    """
+    try:
+        model = load_model(MODEL_PATH)
+        state["engine"] = HybridRecommender(model)
+        state["catalog"] = load_catalog(CATALOG_PATH)
+        print("[ml_api] loaded {:,} users, {:,} items, alpha={:.2f}".format(
+            len(model["user_ids"]), len(model["item_ids"]), model["alpha"]))
+    except (ModelFormatError, OSError) as exc:
+        state["error"] = str(exc)
+        print("[ml_api] MODEL LOAD FAILED: {}".format(exc))
+    yield
+
+
+app = FastAPI(title="ElectroHub recommender", version="2.0", lifespan=lifespan)
+
+
+class Product(BaseModel):
+    id: str
+    title: str
+    price: float | None = None
+    image: str | None = None
+    store: str | None = None
+    categories: list[str] = []
+    average_rating: float | None = None
+    rating_number: int | None = None
+    score: float
 
 
 class RecommendationResponse(BaseModel):
     user_id: str
-    recommended_items: List[str]
+    count: int
+    items: list[Product]
+
+
+def _engine():
+    if state["engine"] is None:
+        raise HTTPException(status_code=503, detail=state["error"] or "model not loaded")
+    return state["engine"]
+
+
+@app.get("/health")
+def health():
+    if state["engine"] is None:
+        return {"status": "error", "detail": state["error"]}
+    eng = state["engine"]
+    return {
+        "status": "ok",
+        "users": len(eng.user_to_idx),
+        "items": eng.n_items,
+        "factors": eng.m["n_factors"],
+        "alpha": eng.alpha,
+        "catalog": len(state["catalog"]),
+    }
 
 
 @app.get("/recommend/", response_model=RecommendationResponse)
 def recommend(
-    user_id: str = Query(..., example="A2GKVGAX1KCTJL"),
-    top_n: int = 10,
+    user_id: str = Query(..., description="A user id present in the training data"),
+    top_n: int = Query(10, ge=1, le=100),
+    alpha: float | None = Query(None, ge=0.0, le=1.0, description="Override the blend weight"),
 ):
-    user_to_idx = model["user_to_idx"]
-    item_to_idx = model["item_to_idx"]
-    idx_to_item = model["idx_to_item"]
+    eng = _engine()
+    try:
+        ranked = eng.recommend(user_id, top_n=top_n, alpha=alpha)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="user not found: {}".format(user_id))
 
-    if user_id not in user_to_idx:
-        raise HTTPException(status_code=404, detail="User not found")
+    items = []
+    for item_id, score in ranked:
+        meta = state["catalog"].get(item_id, {})
+        items.append(
+            Product(
+                id=item_id,
+                title=meta.get("title") or item_id,
+                price=meta.get("price"),
+                image=meta.get("image"),
+                store=meta.get("store"),
+                categories=meta.get("categories") or [],
+                average_rating=meta.get("average_rating"),
+                rating_number=meta.get("rating_number"),
+                score=round(score, 4),
+            )
+        )
+    return RecommendationResponse(user_id=user_id, count=len(items), items=items)
 
-    user_idx = user_to_idx[user_id]
-    user_vector = model["user_factors"][user_idx]
-    user_bias = model["user_bias"][user_idx]
 
-    # Collaborative score
-    collab_scores = (
-        user_vector @ model["item_factors"].T
-        + model["item_bias"]
-        + user_bias
-        + model["global_mean"]
-    )
-
-    # Content score
-    user_rated_items = np.nonzero(
-        model["item_factors"] @ user_vector
-    )[0]
-    content_scores = (
-        model["content_sim"][user_rated_items].mean(axis=0).A1
-        if len(user_rated_items) > 0
-        else np.zeros(len(item_to_idx))
-    )
-
-    alpha = model["alpha"]
-    hybrid_scores = (
-        alpha * collab_scores + (1 - alpha) * content_scores
-    )
-
-    top_indices = np.argsort(hybrid_scores)[::-1][:top_n]
-    top_items = [idx_to_item[i] for i in top_indices]
-
-    return RecommendationResponse(
-        user_id=user_id, recommended_items=top_items
-    )
+@app.get("/users/sample")
+def sample_users(n: int = Query(10, ge=1, le=100)):
+    """Valid user ids, so the storefront and the docs have something to call with."""
+    eng = _engine()
+    return {"user_ids": [str(u) for u in eng.m["user_ids"][:n]]}

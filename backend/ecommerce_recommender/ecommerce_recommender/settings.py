@@ -10,22 +10,51 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / '.env')
+
+
+def _env_bool(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def _env_list(name, default=''):
+    return [v.strip() for v in os.getenv(name, default).split(',') if v.strip()]
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!!-=n1rx@r!-a95oze_g0c59*t@y1j&e=$2-@9f6)0kiq57qdg'
+# Read from the environment. The development fallback is obviously a fallback,
+# and a deployment with DEBUG off must supply a real key or refuse to start.
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-only-insecure-key-do-not-deploy')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
+
+if not DEBUG and SECRET_KEY == 'dev-only-insecure-key-do-not-deploy':
+    raise RuntimeError('Set DJANGO_SECRET_KEY before running with DEBUG off.')
+
+# --- model service -------------------------------------------------------
+# The recommender runs as a separate process. It must NOT be on 8000, which is
+# Django's own runserver default; a shared port means whichever starts second
+# fails to bind.
+MODEL_SERVICE_URL = os.getenv('MODEL_SERVICE_URL', 'http://127.0.0.1:8001').rstrip('/')
+MODEL_SERVICE_TIMEOUT = float(os.getenv('MODEL_SERVICE_TIMEOUT', '5'))
+
+# --- CORS ----------------------------------------------------------------
+# The storefront is a separate origin, so without this every browser request
+# from it is blocked at the preflight.
+CORS_ALLOWED_ORIGINS = _env_list(
+    'CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000')
 
 
 # Application definition
@@ -37,10 +66,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # DRF was used by views.py but never registered, so its settings, renderers
+    # and static files were all inert.
+    'rest_framework',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Must sit above CommonMiddleware to answer preflight requests.
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -120,3 +155,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# --- logging -------------------------------------------------------------
+# Upstream failures are logged here with their traceback; the client only ever
+# receives a fixed message. See views.py.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'root': {'handlers': ['console'], 'level': 'INFO'},
+}
