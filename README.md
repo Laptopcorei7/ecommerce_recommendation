@@ -76,6 +76,40 @@ Every tunable lives in `ml_api/pipeline/config.py`. Sampling is a stable hash of
 Raising it grows the dataset; the cost is roughly quadratic in item count,
 because the content similarity step compares every item against every other.
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest                  # everything; the trained-model tests skip if absent
+pytest -m "not trained" # fast suite only, no artefacts needed
+pytest -m trained       # quality gates, needs a built model
+```
+
+83 fast tests run on a clone with no corpus and no trained model, against a
+small synthetic model built in `tests/conftest.py`. 13 more run against the real
+artefacts and skip cleanly when they are not there.
+
+The suite is organised around the defects this project actually had, so each
+test names the bug it prevents:
+
+| File | Guards |
+|---|---|
+| `test_model_loader.py` | A model file cannot load if its item-indexed arrays disagree about length. This is the guard against the two-orderings bug. |
+| `test_recommender.py` | User history is a history and not the catalogue; content scores vary per user; ranking does not clip; both halves move the blend; rated items are excluded. |
+| `test_pipeline.py` | k-core output really is k-core and is idempotent; user sampling is a stable hash and keeps whole histories; price and image parsing; ALS learns a block structure. |
+| `test_api.py` | Response shape, error codes, bounds on `top_n` and `alpha`, CORS, and a bad model file yielding a serviceable `/health` rather than a dead worker. |
+| `test_trained_model.py` | The model beats a popularity baseline; the ranking is not one global ordering; no mass ties; every recommended item has metadata to render. |
+
+The trained-model tests assert properties rather than exact numbers, so a better
+model still passes but a regression to a non-personalized global ordering does
+not.
+
+Writing them found a real bug on the first run: `recommend()` marked
+already-rated items with `-inf` but still returned them once `top_n` approached
+the catalogue size, so a large request handed back the user's own history with a
+sentinel score. It never surfaced in practice because the API caps `top_n` at
+100 against 62,222 items.
+
 ## Current results
 
 Dataset after sampling and iterative k-core: 119,173 users, 62,222 items,

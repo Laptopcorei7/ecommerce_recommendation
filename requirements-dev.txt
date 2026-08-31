@@ -1,0 +1,8 @@
+# Development and test dependencies.
+#   pip install -r ml_api/requirements.txt -r requirements-dev.txt
+#   pytest
+
+pytest==8.4.2
+pytest-cov==6.3.0
+# FastAPI's TestClient is built on httpx.
+httpx==0.28.1

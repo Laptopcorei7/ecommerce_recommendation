@@ -131,17 +131,28 @@ class HybridRecommender:
         user_idx = self.user_to_idx[user_id]
         scores, rated_idx = self.hybrid_scores(user_idx, alpha)
 
+        excluded = 0
         if exclude_rated and len(rated_idx):
             # Recommending back what someone already bought is the most visible
             # failure mode a recommender has.
             scores = scores.copy()
             scores[rated_idx] = -np.inf
+            excluded = len(rated_idx)
 
-        n = min(top_n, self.n_items)
+        # Cap at the number of items actually eligible. Without this, a top_n
+        # near the catalogue size returns the excluded items too, carrying their
+        # -inf sentinel out to the caller.
+        n = min(top_n, self.n_items - excluded)
+        if n <= 0:
+            return []
         # argpartition finds the top n without sorting all n_items.
         part = np.argpartition(scores, -n)[-n:]
         order = part[np.argsort(scores[part])[::-1]]
-        return [(str(self.item_ids[i]), float(scores[i])) for i in order]
+        return [
+            (str(self.item_ids[i]), float(scores[i]))
+            for i in order
+            if np.isfinite(scores[i])
+        ]
 
     def predict(self, user_idx, item_idx, alpha=None):
         """Predicted rating in [1, 5] for one user-item pair, for RMSE.
