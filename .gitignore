@@ -14,6 +14,13 @@ data/raw/*
 # The trained model is a build output. See ml_api/README for how to rebuild it.
 *.npz
 
+# ---- databases ----
+# Django is gone, but a stray db.sqlite3 was committed once when this section
+# was removed while an untracked one sat on disk. Keeping a generic rule.
+*.sqlite3
+*.sqlite3-journal
+*.db
+
 # ---- python ----
 __pycache__/
 *.py[cod]
