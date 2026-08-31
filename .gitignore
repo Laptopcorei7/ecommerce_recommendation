@@ -28,12 +28,6 @@ dist/
 .pytest_cache/
 .ipynb_checkpoints/
 
-# ---- django ----
-db.sqlite3
-db.sqlite3-journal
-/staticfiles/
-/media/
-
 # ---- node / next ----
 node_modules/
 .next/

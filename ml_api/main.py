@@ -1,11 +1,15 @@
-"""Model service.
+"""Model service. The only backend.
 
-Serves recommendations as full product objects, not bare ids. The previous
+Serves recommendations as full product objects, not bare ids. The original
 version returned a list of ASIN strings, which the storefront had no way to
 render, which is part of why the storefront never called it.
 
+A Django project used to sit in front of this as a gateway. It had no models,
+no migrations and no auth, and did nothing but forward the request unchanged,
+so it was deleted rather than kept for symmetry. Its one real contribution was
+CORS, which is configured here now.
+
 Run:  uvicorn ml_api.main:app --port 8001 --reload
-Port 8001 deliberately: Django's runserver takes 8000.
 """
 
 from __future__ import annotations
@@ -15,6 +19,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from ml_api.model_loader import ModelFormatError, load_catalog, load_model
@@ -24,6 +29,16 @@ from ml_api.recommender import HybridRecommender
 HERE = Path(__file__).resolve().parent
 MODEL_PATH = Path(os.getenv("MODEL_PATH", HERE / "artifacts" / "model.npz"))
 CATALOG_PATH = Path(os.getenv("CATALOG_PATH", HERE / "artifacts" / "catalog.jsonl"))
+
+# Origins allowed to call this from a browser. The storefront is a separate
+# origin, so without this every request from it fails at the preflight.
+CORS_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+    ).split(",")
+    if o.strip()
+]
 
 state = {"engine": None, "catalog": {}, "error": None}
 
@@ -52,6 +67,14 @@ async def lifespan(app):
 
 
 app = FastAPI(title="ElectroHub recommender", version="2.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 
 
 class Product(BaseModel):

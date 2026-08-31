@@ -1,8 +1,7 @@
 # ElectroHub
 
 A hybrid product recommender over the Amazon Reviews 2023 Electronics dataset,
-served through a FastAPI model service and a Django gateway, with a Next.js
-storefront.
+served by a FastAPI model service, with a Next.js storefront.
 
 The recommender blends a collaborative signal with a content-based one computed
 from product metadata. It carries two collaborative factorizations, because
@@ -24,42 +23,41 @@ ml_api/            model service (FastAPI) and the training pipeline
     als.py         implicit-feedback ALS, and why it replaced SVD for ranking
   recommender.py   the scoring function, shared by the API and the evaluation
   model_loader.py  loads artifacts/model.npz and checks its invariants
-backend/           Django gateway; proxies the storefront to the model service
 frontend/          Next.js storefront
 data/              downloaded corpora and derived artefacts (never committed)
 ```
 
 ## Running it
 
-Three processes. The ports matter: the model service must not be on 8000,
-because that is Django's `runserver` default.
+Two processes.
 
 ```bash
 python -m venv .venv
 .venv/Scripts/activate            # Windows;  source .venv/bin/activate elsewhere
-pip install -r ml_api/requirements.txt -r backend/requirements.txt
+pip install -r ml_api/requirements.txt
 
 # 1. model service
 uvicorn ml_api.main:app --port 8001
 
-# 2. django gateway
-cp backend/.env.example backend/ecommerce_recommender/.env
-python backend/ecommerce_recommender/manage.py runserver 8000
-
-# 3. storefront
+# 2. storefront
 cd frontend/ecommerce-app && pnpm install && pnpm dev
 ```
 
-Check the chain end to end:
+Check it:
 
 ```bash
 curl "http://127.0.0.1:8001/health"
-curl "http://127.0.0.1:8000/api/health/"
-curl "http://127.0.0.1:8000/api/recommend/?user_id=<id>&top_n=5"
+curl "http://127.0.0.1:8001/users/sample?n=3"
+curl "http://127.0.0.1:8001/recommend/?user_id=<id>&top_n=5"
 ```
 
-`GET http://127.0.0.1:8001/users/sample` returns user ids that exist in the
-trained model, which is what to pass as `user_id`.
+`GET /users/sample` returns user ids that exist in the trained model, which is
+what to pass as `user_id`.
+
+There was a Django project in front of this as an API gateway. It had no models,
+no migrations and no auth, and forwarded requests unchanged, so it was removed
+rather than kept for symmetry. It contributed one thing worth keeping, CORS,
+which the model service configures itself via `CORS_ALLOWED_ORIGINS`.
 
 ## Rebuilding the model
 
