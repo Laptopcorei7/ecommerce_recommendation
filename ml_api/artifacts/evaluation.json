@@ -1,18 +1,26 @@
 {
-  "alpha": 0.699999988079071,
+  "alpha": 0.9,
+  "baselines": {
+    "popularity": 0.01633333333333333,
+    "random": 0.0,
+    "pure_collaborative": 0.018,
+    "pure_content": 0.0023333333333333335,
+    "hybrid": 0.018333333333333333
+  },
   "k": 10,
-  "rmse": 1.3035464857715244,
-  "mae": 0.9598459742440923,
+  "rmse": 1.2911239699288446,
+  "mae": 0.940897419926426,
   "rating_pairs": 77450,
   "users_evaluated": 4000,
-  "precision_at_k": 0.00042500000000000003,
-  "recall_at_k": 0.00425,
-  "ndcg_at_k": 0.0020166285671714347,
-  "hit_rate_at_k": 0.00425,
+  "precision_at_k": 0.001875,
+  "recall_at_k": 0.01875,
+  "ndcg_at_k": 0.010072909907025735,
+  "hit_rate_at_k": 0.01875,
   "score_scale": {
-    "collab_spread_mean": 2.4152352809906006,
-    "content_spread_mean": 2.407883857488632,
-    "ratio": 0.9969562288362427,
+    "preference_std_mean": 0.024200744926929474,
+    "content_std_mean": 0.08559744344141183,
+    "personalized_term_std": 0.024200744926929474,
+    "item_bias_std": 0.22811149060726166,
     "content_identical_across_users": false
   }
 }

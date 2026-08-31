@@ -23,8 +23,9 @@ from scipy.sparse.linalg import svds
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from ml_api.pipeline import config as cfg
+from ml_api.pipeline.als import fit_als
 
-MODEL_FORMAT_VERSION = 2
+MODEL_FORMAT_VERSION = 3
 
 
 def _log(msg):
@@ -176,8 +177,19 @@ def main():
     _log("building interaction matrix")
     train_matrix = build_matrix(df, user_ids, item_ids)
 
-    _log("fitting collaborative factors")
+    _log("fitting explicit factors (rating prediction)")
     gm, ub, ib, uf, itf, sigma = fit_factors(train_matrix, cfg.N_FACTORS, cfg.RANDOM_SEED)
+
+    _log("fitting implicit ALS factors (ranking)")
+    als_u, als_i = fit_als(
+        train_matrix,
+        n_factors=cfg.N_FACTORS,
+        iterations=cfg.ALS_ITERATIONS,
+        reg=cfg.ALS_REG,
+        confidence=cfg.ALS_CONFIDENCE,
+        seed=cfg.RANDOM_SEED,
+        log=_log,
+    )
 
     _log("building content similarity")
     texts = [catalog[a]["text"] for a in item_ids]
@@ -186,6 +198,8 @@ def main():
     # Ordering invariant: everything indexed by item is the same length and in
     # the same order as item_ids. Checked again at load time.
     assert itf.shape[0] == len(item_ids) == ib.shape[0] == sim.shape[0] == sim.shape[1]
+    assert als_i.shape[0] == len(item_ids)
+    assert als_u.shape[0] == len(user_ids)
     assert train_matrix.shape == (len(user_ids), len(item_ids))
 
     _log("writing " + str(cfg.MODEL_NPZ))
@@ -196,6 +210,8 @@ def main():
         user_ids=user_ids,
         user_factors=uf,
         item_factors=itf,
+        als_user_factors=als_u,
+        als_item_factors=als_i,
         user_bias=ub,
         item_bias=ib,
         sigma=sigma,
@@ -216,14 +232,13 @@ def main():
     with open(cfg.SERVED_CATALOG, "w", encoding="utf-8") as fh:
         for pa in item_ids:
             rec = {k: v for k, v in catalog[pa].items() if k != "text"}
-            fh.write(json.dumps(rec, ensure_ascii=False) + "
-")
+            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
     size = cfg.MODEL_NPZ.stat().st_size / 1048576
     _log("")
     _log("=" * 58)
     _log("model.npz    {:.1f} MB".format(size))
-    _log("factors      {}".format(uf.shape[1]))
+    _log("factors      {} (explicit + implicit ALS)".format(uf.shape[1]))
     _log("global mean  {:.4f}".format(gm))
     _log("elapsed      {:.0f}s".format(time.time() - t0))
     _log("=" * 58)

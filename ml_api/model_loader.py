@@ -14,7 +14,7 @@ import json
 import numpy as np
 import scipy.sparse as sp
 
-SUPPORTED_FORMAT_VERSION = 2
+SUPPORTED_FORMAT_VERSION = 3
 
 
 class ModelFormatError(RuntimeError):
@@ -53,6 +53,10 @@ def load_model(path):
         "user_ids": user_ids,
         "user_factors": d["user_factors"],
         "item_factors": d["item_factors"],
+        # Second factorization, fitted on implicit preference. Drives ranking;
+        # the explicit pair above drives rating prediction. See pipeline/als.py.
+        "als_user_factors": d["als_user_factors"],
+        "als_item_factors": d["als_item_factors"],
         "user_bias": d["user_bias"],
         "item_bias": d["item_bias"],
         "sigma": d["sigma"],
@@ -82,6 +86,8 @@ def _check(m, n_users, n_items):
             problems.append("{}: got {}, expected {}".format(name, got, expected))
 
     want("item_factors rows", m["item_factors"].shape[0], n_items)
+    want("als_item_factors rows", m["als_item_factors"].shape[0], n_items)
+    want("als_user_factors rows", m["als_user_factors"].shape[0], n_users)
     want("item_bias", m["item_bias"].shape[0], n_items)
     want("content_sim rows", m["content_sim"].shape[0], n_items)
     want("content_sim cols", m["content_sim"].shape[1], n_items)

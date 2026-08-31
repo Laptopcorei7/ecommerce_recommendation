@@ -50,6 +50,15 @@ KCORE_MAX_PASSES = 20
 N_FACTORS = 64
 RANDOM_SEED = 42
 
+# --- implicit ALS (ranking) ---
+# Ranking and rating prediction are different objectives, so the model carries
+# two factorizations. ALS on implicit preference drives the top-N ranking;
+# the SVD-on-residual factorization stays for rating prediction and RMSE.
+# See ml_api/pipeline/als.py for why plain SVD ranks no better than random here.
+ALS_ITERATIONS = 15
+ALS_REG = 0.05
+ALS_CONFIDENCE = 40.0
+
 # Content features are drawn from product metadata (title, features,
 # description, categories, store), not from review text. Review text would
 # make an item's content vector a function of how many reviews it has, which
@@ -65,9 +74,33 @@ TFIDF_MAX_DF = 0.5
 CONTENT_TOP_K = 50
 CONTENT_CHUNK_ROWS = 2000
 
-# Weight on the collaborative half. Both score vectors are standardized before
-# blending, so this is now a real 0..1 dial. Re-tuned by evaluate.py --tune-alpha.
-ALPHA = 0.7
+# Weight on the collaborative half.
+#
+# For ranking the two halves measure different things (an ALS preference score
+# and a predicted rating), so both are standardized to zero mean and unit
+# variance before blending. Standardizing is order-preserving within each half,
+# so it changes nothing about what each half believes, only the scale on which
+# they are combined. Without it the smaller-variance half cannot influence the
+# result at any alpha, which is the defect that made the original hybrid a pure
+# collaborative model.
+#
+# For rating prediction both halves are already on the 1-5 scale and are
+# blended directly. Re-tune with: evaluate.py --tune-alpha
+#
+# THIS VALUE IS THE SOURCE OF TRUTH. The trained model file also stores an
+# alpha, but only as a record of what was used at training time; the API and
+# the evaluation both read it from here. Alpha is a blend weight applied at
+# scoring time, so tuning it must not require a ten-minute retrain.
+#
+# Tuned on the validation split, 2,000 users: ndcg@10 rises monotonically with
+# alpha (0.0 -> 0.00134, 0.5 -> 0.01345, 0.9 -> 0.01705, 1.0 -> 0.01709), so
+# 0.9 and 1.0 are within noise of each other and the content half adds nothing
+# measurable to ranking on this data. 0.9 is kept rather than 1.0 so the
+# content signal still covers items the collaborative model has thin evidence
+# for. That benefit is not visible in these numbers: the 5-core benchmark
+# guarantees every user and item has at least five interactions, so it cannot
+# exhibit a cold-start case by construction.
+ALPHA = 0.9
 
 # ---------------------------------------------------------------- evaluation
 

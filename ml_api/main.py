@@ -18,6 +18,7 @@ from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
 from ml_api.model_loader import ModelFormatError, load_catalog, load_model
+from ml_api.pipeline import config as cfg
 from ml_api.recommender import HybridRecommender
 
 HERE = Path(__file__).resolve().parent
@@ -36,10 +37,14 @@ async def lifespan(app):
     """
     try:
         model = load_model(MODEL_PATH)
-        state["engine"] = HybridRecommender(model)
+        # Alpha comes from config, not the model file. See config.ALPHA.
+        alpha = float(os.getenv("ALPHA", cfg.ALPHA))
+        state["engine"] = HybridRecommender(model, alpha=alpha)
         state["catalog"] = load_catalog(CATALOG_PATH)
-        print("[ml_api] loaded {:,} users, {:,} items, alpha={:.2f}".format(
-            len(model["user_ids"]), len(model["item_ids"]), model["alpha"]))
+        print("[ml_api] loaded {:,} users, {:,} items, alpha={:.2f} "
+              "(model file recorded {:.2f} at training time)".format(
+                  len(model["user_ids"]), len(model["item_ids"]),
+                  alpha, model["alpha"]))
     except (ModelFormatError, OSError) as exc:
         state["error"] = str(exc)
         print("[ml_api] MODEL LOAD FAILED: {}".format(exc))
@@ -84,6 +89,7 @@ def health():
         "items": eng.n_items,
         "factors": eng.m["n_factors"],
         "alpha": eng.alpha,
+        "alpha_at_training": eng.m["alpha"],
         "catalog": len(state["catalog"]),
     }
 

@@ -4,9 +4,16 @@ A hybrid product recommender over the Amazon Reviews 2023 Electronics dataset,
 served through a FastAPI model service and a Django gateway, with a Next.js
 storefront.
 
-The recommender blends two predictors that both estimate a rating in [1, 5]:
-matrix factorization over the user-item matrix, and a content-based score
-computed from product metadata. Because both sit on the same scale, the blend
+The recommender blends a collaborative signal with a content-based one computed
+from product metadata. It carries two collaborative factorizations, because
+ranking and rating prediction are different problems:
+
+- **Ranking** uses implicit-feedback ALS, which fits observed interactions and
+  optimizes preference. This is what `GET /recommend/` returns.
+- **Rating prediction** uses a bias-corrected truncated SVD, which optimizes
+  squared error. This is what RMSE measures.
+
+Both halves of each blend are put on a common scale before combining, so the
 weight `alpha` is a real dial rather than a decoration.
 
 ## Layout
@@ -14,6 +21,7 @@ weight `alpha` is a real dial rather than a decoration.
 ```
 ml_api/            model service (FastAPI) and the training pipeline
   pipeline/        build_dataset -> train -> evaluate
+    als.py         implicit-feedback ALS, and why it replaced SVD for ranking
   recommender.py   the scoring function, shared by the API and the evaluation
   model_loader.py  loads artifacts/model.npz and checks its invariants
 backend/           Django gateway; proxies the storefront to the model service
@@ -74,50 +82,64 @@ because the content similarity step compares every item against every other.
 
 Dataset after sampling and iterative k-core: 119,173 users, 62,222 items,
 1,179,677 interactions, density 0.0159%. Evaluated on the dataset's own
-leave-last-out test split, 77,450 test users.
+leave-last-out test split, alpha 0.9.
 
 | Metric | Value |
 |---|---|
-| RMSE | 1.3035 |
-| MAE | 0.9598 |
-| Recall@10 | 0.0043 |
-| NDCG@10 | 0.0020 |
-| Hit rate@10 | 0.0043 |
+| RMSE | 1.2911 |
+| MAE | 0.9409 |
+| Recall@10 | 0.0188 |
+| NDCG@10 | 0.0101 |
+| Hit rate@10 | 0.0188 |
 
-Hit rate@10 against baselines, 3,000 sampled users:
+Hit rate@10 against baselines, 3,000 sampled users. A recommender that cannot
+beat "show the most popular items" has not earned its complexity, so this
+comparison is part of the standard evaluation rather than an afterthought.
 
 | Model | Hit rate@10 |
 |---|---|
-| Popularity | 0.0123 |
-| Pure content | 0.0040 |
-| Hybrid, alpha=0.7 | 0.0037 |
-| Pure collaborative | 0.0003 |
-| Random | 0.0003 |
+| **Hybrid, alpha=0.9** | **0.0183** |
+| Pure collaborative (ALS) | 0.0180 |
+| Popularity | 0.0163 |
+| Pure content | 0.0023 |
+| Random | 0.0000 |
 
-**The ranking quality is poor and the collaborative half is the reason.** It
-scores level with random, and the full model loses to a popularity baseline by
-roughly 3x. This is a real result, not a plumbing failure: the service chain
-works and the blend is now genuinely blending.
+Two honest caveats. The gap between the hybrid and pure collaborative is 0.0003
+on 3,000 users, which is about one user and well inside noise; the defensible
+claim is that they are equivalent, not that the hybrid wins. And the margin over
+popularity, while real and consistent, is modest.
 
-The cause is measurable. Across items, `item_bias` has a standard deviation of
-0.2281 while the personalized term `<user_factors, item_factors>` has a standard
-deviation of 0.0017, a ratio of 0.007. The collaborative ranking is therefore
-about 99% a single global ordering by item bias, identical for every user; its
-top-10 for a given user is exactly the global top-10 by `item_bias`.
+The alpha sweep on the validation split shows the content half contributing
+almost nothing to ranking:
 
-Plain truncated SVD is the wrong tool here. `svds` treats every unobserved cell
-as a zero, and at 0.0159% density the objective is dominated by fitting those
-zeros, which shrinks the learned factors to near nothing. Fitting only the
-observed entries, with ALS or SGD, is the standard remedy. For top-N ranking
-specifically, an implicit-feedback objective such as BPR or weighted ALS
-optimizes the thing being measured, whereas RMSE-optimal rating prediction is
-known to rank badly.
+| alpha | 0.0 | 0.2 | 0.5 | 0.7 | 0.9 | 1.0 |
+|---|---|---|---|---|---|---|
+| NDCG@10 | 0.00134 | 0.00868 | 0.01345 | 0.01576 | 0.01705 | 0.01709 |
+| RMSE | 1.3170 | 1.2805 | 1.2392 | 1.2213 | 1.2115 | 1.2097 |
 
-Worth noting the shape of this: the ratio 0.007 is the same one that made the
-old content term inert. The previous version had a dead content half; this one
-has a dead personalization term inside its collaborative half. The difference is
-that the evaluation now reports it instead of hiding it.
+0.9 and 1.0 are indistinguishable. 0.9 is kept rather than 1.0 so the content
+signal still covers items the collaborative model has thin evidence for, but
+that benefit is not visible here: the 5-core benchmark guarantees every user and
+item has at least five interactions, so by construction it cannot exhibit a
+cold-start case. Treat the retained content weight as insurance, not as
+something these numbers justify.
 
+### What changed, and why
+
+The first rebuild used `scipy.svds` for the collaborative half and it ranked no
+better than random, losing to a popularity baseline by 3x. The cause was
+measurable: `item_bias` had a standard deviation of 0.2281 while the
+personalized term had 0.0017, a ratio of 0.007, so the ranking was 99% a single
+global ordering identical for every user.
+
+`svds` factorizes with every unobserved cell treated as a zero. At 0.0159%
+density that is 99.98% of the objective, so the factors get crushed. Replacing
+it with implicit-feedback ALS, which fits only observed interactions and
+optimizes preference rather than rating value, moved pure collaborative hit rate
+from 0.0003 to 0.0180, a factor of 60, and took it past the popularity baseline.
+
+The model now carries both factorizations, because ranking and rating prediction
+are genuinely different objectives and this project reports both.
 
 ## Notes on the rebuild
 
