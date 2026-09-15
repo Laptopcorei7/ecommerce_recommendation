@@ -29,58 +29,52 @@ export function BuyBox({ product }: { product: Product }) {
   const unitPrice = formatPrice(product.price)
 
   return (
-    <div className="border border-rule bg-paper-sunk">
-      <div className="border-b border-rule px-4 py-3">
-        <div className="label mb-1.5">Price</div>
-        <Price value={product.price} size="lg" />
-        {!unitPrice && (
-          <p className="mt-2 max-w-[34ch] text-[12px] leading-relaxed text-ink-2">
-            This record has no price in the source data. It can still go in the
-            cart; the cart will list it and leave it out of the total.
-          </p>
-        )}
-      </div>
+    <div className="bg-tile p-5">
+      <Price value={product.price} size="lg" />
+      {!unitPrice && (
+        <p className="mt-3 max-w-[34ch] text-[13.5px] leading-relaxed text-fg-2">
+          This record has no price in the source data. It can still go in the
+          cart; the cart will list it and leave it out of the total.
+        </p>
+      )}
 
-      <div className="flex items-end gap-3 px-4 py-3">
-        <div>
-          <div className="label mb-1.5">Quantity</div>
-          <div className="flex w-[104px]">
-            <button
-              type="button"
-              className="btn btn-line px-2"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              disabled={qty <= 1}
-              aria-label="Decrease quantity"
-            >
-              −
-            </button>
-            <input
-              type="number"
-              min={1}
-              max={99}
-              value={qty}
-              onChange={(e) => {
-                const n = Number.parseInt(e.target.value, 10)
-                setQty(Number.isFinite(n) ? Math.min(99, Math.max(1, n)) : 1)
-              }}
-              aria-label="Quantity"
-              className="field tnum w-full border-x-0 px-0 text-center font-mono text-[13px]"
-            />
-            <button
-              type="button"
-              className="btn btn-line px-2"
-              onClick={() => setQty((q) => Math.min(99, q + 1))}
-              disabled={qty >= 99}
-              aria-label="Increase quantity"
-            >
-              +
-            </button>
-          </div>
+      <div className="mt-5 flex items-center gap-3">
+        <div className="flex h-11 items-center rounded-full bg-bg">
+          <button
+            type="button"
+            className="flex h-11 w-10 items-center justify-center rounded-full text-[18px] font-bold hover:bg-tile-2 disabled:text-fg-3"
+            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            disabled={qty <= 1}
+            aria-label="Decrease quantity"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            min={1}
+            max={99}
+            value={qty}
+            onChange={(e) => {
+              const n = Number.parseInt(e.target.value, 10)
+              setQty(Number.isFinite(n) ? Math.min(99, Math.max(1, n)) : 1)
+            }}
+            aria-label="Quantity"
+            className="tnum w-8 bg-transparent text-center text-[15px] font-bold outline-none"
+          />
+          <button
+            type="button"
+            className="flex h-11 w-10 items-center justify-center rounded-full text-[18px] font-bold hover:bg-tile-2 disabled:text-fg-3"
+            onClick={() => setQty((q) => Math.min(99, q + 1))}
+            disabled={qty >= 99}
+            aria-label="Increase quantity"
+          >
+            +
+          </button>
         </div>
 
         <button
           type="button"
-          className="btn flex-1"
+          className="btn btn-volt h-11 flex-1"
           disabled={!ready}
           onClick={() => {
             add(
@@ -101,8 +95,8 @@ export function BuyBox({ product }: { product: Product }) {
       </div>
 
       {added && inCart > 0 && (
-        <p className="border-t border-rule px-4 py-2.5 text-[12.5px]">
-          <span className="tnum font-mono">{inCart}</span> in your cart.{' '}
+        <p className="mt-4 text-[14px]">
+          <span className="tnum font-bold">{inCart}</span> in your cart.{' '}
           <Link href="/cart" className="link">
             Go to cart
           </Link>

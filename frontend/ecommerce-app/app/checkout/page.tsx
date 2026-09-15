@@ -31,7 +31,7 @@ export default function CheckoutPage() {
   if (!ready) {
     return (
       <div className="mx-auto max-w-[1400px] px-4 py-16">
-        <p className="label">Loading</p>
+        <p className="meta">Loading</p>
       </div>
     )
   }
@@ -39,15 +39,13 @@ export default function CheckoutPage() {
   if (lines.length === 0) {
     return (
       <div className="mx-auto max-w-[1400px] px-4">
-        <div className="border-b-2 border-rule-heavy pb-4 pt-8">
-          <p className="label mb-2">Checkout</p>
-          <h1 className="text-[26px] font-semibold">There is nothing to order.</h1>
+        <div className="page-head">
+          <p className="meta mb-3">Checkout</p>
+          <h1 className="display">There is nothing to order.</h1>
         </div>
-        <div className="py-12">
-          <Link href="/catalog" className="btn">
-            Browse the catalogue
-          </Link>
-        </div>
+        <Link href="/catalog" className="btn">
+          Shop the catalogue
+        </Link>
       </div>
     )
   }
@@ -63,9 +61,10 @@ export default function CheckoutPage() {
     }
     try {
       window.localStorage.setItem(ORDER_KEY, JSON.stringify(order))
-    } catch {
+    } catch (err) {
       // If storage is unavailable the confirmation page says so rather than
       // this step failing silently.
+      console.error('Could not save the order to localStorage:', err)
     }
     clear()
     router.push('/checkout/confirmation')
@@ -73,20 +72,18 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] px-4">
-      <div className="border-b-2 border-rule-heavy pb-4 pt-8">
-        <p className="label mb-2">Checkout</p>
-        <h1 className="text-[26px] font-semibold">Review the order</h1>
+      <div className="page-head">
+        <p className="meta mb-3">Checkout</p>
+        <h1 className="display">Review the order</h1>
       </div>
 
-      <div className="grid gap-8 py-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-8 pb-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div>
           {/* The disclosure comes first, before the order lines, because it
               changes what the reader should expect from this page. */}
-          <div className="mb-8 border-l-2 border-signal bg-signal-tint px-4 py-3">
-            <h2 className="mb-1.5 text-[13.5px] font-semibold">
-              No payment is taken and nothing ships.
-            </h2>
-            <p className="max-w-[70ch] text-[13px] leading-relaxed text-ink-2">
+          <div className="mb-8 bg-volt px-5 py-5">
+            <h2 className="display mb-2 text-[20px]">No payment is taken and nothing ships.</h2>
+            <p className="max-w-[70ch] text-[14.5px] leading-relaxed">
               This catalogue is a dataset, not a shop. There is no payment
               processor behind this page and no address to deliver to, so it
               asks for neither. Placing the order writes a record in this
@@ -95,24 +92,20 @@ export default function CheckoutPage() {
             </p>
           </div>
 
-          <h2 className="label mb-3 border-b border-rule-heavy pb-1.5 text-ink">
+          <h2 className="display tnum mb-3 text-[18px]">
             {formatCount(count)} {count === 1 ? 'item' : 'items'}
           </h2>
-          <div>
+          <div className="space-y-1">
             {lines.map((line) => (
               <div
                 key={line.id}
-                className="grid grid-cols-[minmax(0,1fr)_auto_110px] items-baseline gap-4 border-b border-rule py-2.5"
+                className="grid grid-cols-[minmax(0,1fr)_auto_96px] items-baseline gap-4 bg-tile-soft px-4 py-3"
               >
-                <span className="min-w-0 text-[13px]">
-                  {shortTitle(line.title, 90)}
-                </span>
-                <span className="font-mono tnum text-[12px] text-ink-3">
-                  ×{line.qty}
-                </span>
-                <span className="text-right font-mono tnum text-[13px]">
+                <span className="min-w-0 text-[14.5px]">{shortTitle(line.title, 90)}</span>
+                <span className="tnum text-[13px] text-fg-3">×{line.qty}</span>
+                <span className="tnum text-right text-[14.5px] font-bold">
                   {formatPrice((line.price ?? 0) * line.qty) ?? (
-                    <span className="label">no price</span>
+                    <span className="pill bg-bg">No price</span>
                   )}
                 </span>
               </div>
@@ -120,51 +113,44 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <aside className="lg:sticky lg:top-[150px] lg:self-start">
-          <div className="border border-rule bg-paper-sunk">
-            <h2 className="label border-b border-rule px-4 py-2.5 text-ink">
-              Total
-            </h2>
-            <dl className="px-4 py-3 text-[13px]">
-              <div className="flex justify-between gap-4 py-1">
-                <dt className="text-ink-2">Priced subtotal</dt>
-                <dd className="font-mono tnum">{formatPrice(subtotal)}</dd>
+        <aside className="lg:sticky lg:top-[132px] lg:self-start">
+          <div className="bg-tile p-5">
+            <h2 className="display mb-4 text-[18px]">Total</h2>
+            <dl className="space-y-2 text-[14.5px]">
+              <div className="flex justify-between gap-4">
+                <dt className="text-fg-2">Priced subtotal</dt>
+                <dd className="tnum font-bold">{formatPrice(subtotal)}</dd>
               </div>
-              <div className="flex justify-between gap-4 py-1">
-                <dt className="text-ink-2">Shipping</dt>
-                <dd className="label">not applicable</dd>
+              <div className="flex justify-between gap-4">
+                <dt className="text-fg-2">Shipping</dt>
+                <dd className="text-fg-3">Not applicable</dd>
               </div>
-              <div className="flex justify-between gap-4 py-1">
-                <dt className="text-ink-2">Tax</dt>
-                <dd className="label">not calculated</dd>
+              <div className="flex justify-between gap-4">
+                <dt className="text-fg-2">Tax</dt>
+                <dd className="text-fg-3">Not calculated</dd>
               </div>
-              {unpriced > 0 && (
-                <div className="mt-2 border-t border-rule pt-2">
-                  <p className="text-[12px] leading-relaxed text-ink-2">
-                    <span className="font-mono tnum text-signal">{unpriced}</span>{' '}
-                    {unpriced === 1 ? 'item has' : 'items have'} no price in the
-                    source data and {unpriced === 1 ? 'is' : 'are'} not in this
-                    total.
-                  </p>
-                </div>
-              )}
             </dl>
-            <div className="border-t border-rule p-4">
-              <button
-                type="button"
-                onClick={place}
-                disabled={placing}
-                className="btn w-full"
-              >
-                {placing ? 'Placing…' : 'Place order'}
-              </button>
-              <Link
-                href="/cart"
-                className="label mt-3 block text-center hover:text-signal"
-              >
-                Back to the cart
-              </Link>
-            </div>
+            {unpriced > 0 && (
+              <p className="mt-4 text-[13px] leading-relaxed text-fg-2">
+                <span className="tnum font-bold text-alert">{unpriced}</span>{' '}
+                {unpriced === 1 ? 'item has' : 'items have'} no price in the source
+                data and {unpriced === 1 ? 'is' : 'are'} not in this total.
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={place}
+              disabled={placing}
+              className="btn btn-volt mt-5 w-full"
+            >
+              {placing ? 'Placing…' : 'Place order'}
+            </button>
+            <Link
+              href="/cart"
+              className="mt-4 block text-center text-[13px] font-semibold underline decoration-2 underline-offset-4"
+            >
+              Back to the cart
+            </Link>
           </div>
         </aside>
       </div>

@@ -31,27 +31,29 @@ const EVALUATION = [
 export default async function RecommendationsPage() {
   const [users, health] = await Promise.all([
     getSampleUsers(40)
-      .then((r) => r.user_ids)
+      .then((r) => r.users)
       .catch(() => []),
     getHealth().catch(() => null),
   ])
 
   return (
     <div className="mx-auto max-w-[1400px] px-4">
-      <div className="border-b-2 border-rule-heavy pb-5 pt-8">
-        <p className="label mb-2">Hybrid recommender</p>
-        <h1 className="max-w-[24ch] text-[30px] font-semibold leading-tight">
-          Ranked for one shopper, out of {formatCount(health?.catalog ?? 0)}.
-        </h1>
-        <p className="mt-3 max-w-[80ch] text-[14px] leading-relaxed text-ink-2">
-          Pick any of the shoppers the model was fitted on and it ranks the
-          whole catalogue for them, minus what they already rated. The blend
-          weight is read on every request rather than baked into the model file,
-          so moving it re-ranks live.
+      <div className="page-head">
+        <p className="meta mb-3">Hybrid recommender</p>
+        <h1 className="display max-w-[18ch]">How the recommender picks products</h1>
+        <p className="mt-5 max-w-[75ch] text-[16px] leading-relaxed text-fg-2">
+          A recommender looks at what a shopper has already rated and guesses
+          what else they would want. This page lets you watch it do that for
+          real shoppers: choose one, see what they rated, and see what the model
+          picks for them out of{' '}
+          <span className="tnum font-semibold text-fg">
+            {formatCount(health?.catalog ?? 0)}
+          </span>{' '}
+          products.
         </p>
       </div>
 
-      <section className="py-8">
+      <section className="pb-8">
         <RecPanel
           users={users}
           topN={20}
@@ -61,15 +63,16 @@ export default async function RecommendationsPage() {
       </section>
 
       {/* ---- how it works ---- */}
-      <section className="grid gap-10 border-t border-rule py-10 lg:grid-cols-2">
+      <section className="grid gap-12 py-12 lg:grid-cols-2">
         <div>
-          <div className="section-head">
-            <h2>What the two halves are</h2>
-          </div>
-          <dl className="space-y-4 text-[13px] leading-relaxed">
+          <h2 className="display mb-6 text-[26px] sm:text-[32px]">How a score is made</h2>
+          <dl className="space-y-5 text-[15px] leading-relaxed">
             <div>
-              <dt className="label mb-1 text-collab">Collaborative</dt>
-              <dd className="max-w-[62ch] text-ink-2">
+              <dt className="mb-1 flex items-center gap-2 font-bold">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-collab" aria-hidden />
+                Similar shoppers <span className="font-normal text-fg-3">(collaborative filtering)</span>
+              </dt>
+              <dd className="max-w-[62ch] text-fg-2">
                 Implicit-feedback ALS over {formatCount(health?.factors ?? 0)}{' '}
                 latent factors, fitted on observed interactions only. An earlier
                 version used truncated SVD, which treats every unobserved cell as
@@ -79,8 +82,11 @@ export default async function RecommendationsPage() {
               </dd>
             </div>
             <div>
-              <dt className="label mb-1 text-content">Content</dt>
-              <dd className="max-w-[62ch] text-ink-2">
+              <dt className="mb-1 flex items-center gap-2 font-bold">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-content" aria-hidden />
+                Similar products <span className="font-normal text-fg-3">(content-based)</span>
+              </dt>
+              <dd className="max-w-[62ch] text-fg-2">
                 A similarity-weighted average of the ratings this shopper gave to
                 items whose title, brand and category text resemble the
                 candidate. It contributes almost nothing to ranking on this
@@ -88,8 +94,8 @@ export default async function RecommendationsPage() {
               </dd>
             </div>
             <div>
-              <dt className="label mb-1">The blend</dt>
-              <dd className="max-w-[62ch] text-ink-2">
+              <dt className="mb-1 font-bold">The blend</dt>
+              <dd className="max-w-[62ch] text-fg-2">
                 Both halves are standardized before they are combined. Without
                 that step a collaborative term spanning 4.0 was being added to a
                 content term spanning 0.028, so the content half could not move
@@ -100,28 +106,26 @@ export default async function RecommendationsPage() {
         </div>
 
         <div>
-          <div className="section-head">
-            <h2>Hit-rate@10 against baselines</h2>
-          </div>
-          <table className="w-full text-[13px]">
+          <h2 className="display mb-6 text-[26px] sm:text-[32px]">Hit-rate@10 against baselines</h2>
+          <table className="w-full text-[14.5px]">
             <thead>
-              <tr className="border-b border-rule-heavy">
-                <th className="label py-2 text-left font-normal">Model</th>
-                <th className="label py-2 text-right font-normal">hit-rate@10</th>
-                <th className="label py-2 text-right font-normal">Note</th>
+              <tr className="bg-band text-bg">
+                <th className="px-3 py-2.5 text-left text-[12.5px] font-bold uppercase">Model</th>
+                <th className="px-3 py-2.5 text-right text-[12.5px] font-bold uppercase">Hit-rate@10</th>
+                <th className="px-3 py-2.5 text-right text-[12.5px] font-bold uppercase">Note</th>
               </tr>
             </thead>
             <tbody>
-              {EVALUATION.map((row) => (
-                <tr key={row.model} className="border-b border-rule">
-                  <td className="py-2">{row.model}</td>
-                  <td className="py-2 text-right font-mono tnum">{row.hit}</td>
-                  <td className="label py-2 text-right">{row.note}</td>
+              {EVALUATION.map((row, i) => (
+                <tr key={row.model} className={i === 0 ? 'bg-volt font-semibold' : 'even:bg-tile-soft'}>
+                  <td className="px-3 py-2.5">{row.model}</td>
+                  <td className="tnum px-3 py-2.5 text-right font-bold">{row.hit}</td>
+                  <td className="px-3 py-2.5 text-right text-[13px]">{row.note}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-4 max-w-[62ch] text-[12.5px] leading-relaxed text-ink-2">
+          <p className="mt-5 max-w-[62ch] text-[14px] leading-relaxed text-fg-2">
             The margin over popularity is real but small, and the margin over
             pure collaborative is 0.0003 on 3,000 users, which is inside noise.
             The content half adds nothing measurable to ranking on a 5-core
@@ -129,7 +133,7 @@ export default async function RecommendationsPage() {
             recommender evaluated without a popularity baseline is not
             evaluated at all.
           </p>
-          <p className="mt-3 text-[12.5px] text-ink-2">
+          <p className="tnum mt-3 text-[14px] font-semibold">
             RMSE 1.2911 · NDCG@10 0.0101 · Recall@10 0.0188
           </p>
         </div>

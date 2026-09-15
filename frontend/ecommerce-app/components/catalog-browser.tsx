@@ -45,38 +45,23 @@ export function CatalogBrowser({
   }
 
   return (
-    <div className="grid gap-8 py-8 lg:grid-cols-[210px_minmax(0,1fr)]">
+    <div className="grid gap-8 pb-8 lg:grid-cols-[230px_minmax(0,1fr)]">
       {/* ---- category rail ---- */}
-      <aside className="lg:sticky lg:top-[150px] lg:self-start">
-        <h2 className="label mb-2 border-b border-rule-heavy pb-1.5 text-ink">
-          Categories
-        </h2>
-        <ul>
-          <li>
-            <Link
-              href="/catalog"
-              className={`flex items-baseline justify-between gap-2 border-b border-rule py-1.5 text-[12.5px] ${
-                activeCategory === null ? 'font-medium text-signal' : 'hover:text-signal'
-              }`}
-            >
-              <span>All products</span>
-            </Link>
+      <aside className="lg:sticky lg:top-[132px] lg:self-start">
+        <h2 className="display mb-3 text-[15px]">Categories</h2>
+        {/* A horizontal strip of pills on narrow screens, a list on wide ones. */}
+        <ul className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 lg:mx-0 lg:block lg:space-y-0.5 lg:overflow-visible lg:px-0">
+          <li className="shrink-0">
+            <RailLink href="/catalog" active={activeCategory === null} name="All products" />
           </li>
           {categories.map((c) => (
-            <li key={c.slug}>
-              <Link
+            <li key={c.slug} className="shrink-0">
+              <RailLink
                 href={`/categories/${c.slug}`}
-                className={`flex items-baseline justify-between gap-2 border-b border-rule py-1.5 text-[12.5px] ${
-                  activeCategory === c.slug
-                    ? 'font-medium text-signal'
-                    : 'hover:text-signal'
-                }`}
-              >
-                <span className="min-w-0">{c.name}</span>
-                <span className="font-mono tnum shrink-0 text-[11px] text-ink-3">
-                  {formatCount(c.count)}
-                </span>
-              </Link>
+                active={activeCategory === c.slug}
+                name={c.name}
+                count={c.count}
+              />
             </li>
           ))}
         </ul>
@@ -84,59 +69,52 @@ export function CatalogBrowser({
 
       {/* ---- results ---- */}
       <div className="min-w-0">
-        <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-rule pb-3">
-          <p className="text-[13px]">
-            <span className="font-mono tnum font-medium">
-              {formatCount(page.total)}
-            </span>{' '}
-            <span className="text-ink-2">
-              {page.total === 1 ? 'product' : 'products'}
-            </span>
-            {q && <span className="text-ink-2"> matching “{q}”</span>}
+        <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <p className="text-[15px]">
+            <span className="tnum font-bold">{formatCount(page.total)}</span>{' '}
+            <span className="text-fg-2">{page.total === 1 ? 'product' : 'products'}</span>
+            {q && <span className="text-fg-2"> matching “{q}”</span>}
           </p>
 
           <div className="ml-auto flex flex-wrap items-center gap-x-5 gap-y-2">
             <SortSelect value={sort} basePath={basePath} params={params} />
-            <span className="flex items-center gap-2">
-              <span className="label">View</span>
-              <span className="flex">
+            <span className="flex rounded-full bg-tile p-1" role="group" aria-label="View">
+              {(['rows', 'grid'] as const).map((v) => (
                 <Link
-                  href={viewHref('rows')}
-                  className={`btn ${view === 'rows' ? '' : 'btn-line'}`}
+                  key={v}
+                  href={viewHref(v)}
+                  aria-current={view === v ? 'true' : undefined}
+                  className={`rounded-full px-4 py-1.5 text-[12.5px] font-bold uppercase ${
+                    view === v ? 'bg-fg text-bg' : 'hover:bg-tile-2'
+                  }`}
                 >
-                  Rows
+                  {v === 'rows' ? 'Rows' : 'Grid'}
                 </Link>
-                <Link
-                  href={viewHref('grid')}
-                  className={`btn ${view === 'grid' ? '' : 'btn-line'} border-l-0`}
-                >
-                  Grid
-                </Link>
-              </span>
+              ))}
             </span>
           </div>
         </div>
 
         {page.items.length === 0 ? (
-          <div className="border border-rule bg-paper-sunk px-4 py-10 text-center">
-            <p className="text-[14px]">Nothing here matches those filters.</p>
-            <p className="mx-auto mt-2 max-w-[46ch] text-[13px] text-ink-2">
+          <div className="bg-tile px-5 py-12 text-center">
+            <p className="display text-[22px]">Nothing matches those filters.</p>
+            <p className="mx-auto mt-3 max-w-[46ch] text-[14px] text-fg-2">
               Search matches whole words against the product title and brand
               only, so a model number that is not written in the title will not
               be found.
             </p>
-            <Link href="/catalog" className="btn btn-line mt-4">
+            <Link href="/catalog" className="btn mt-6">
               Clear filters
             </Link>
           </div>
         ) : view === 'grid' ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3">
             {page.items.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
         ) : (
-          <div className="border-t border-rule">
+          <div className="space-y-2">
             {page.items.map((p) => (
               <ProductRow key={p.id} product={p} />
             ))}
@@ -151,5 +129,34 @@ export function CatalogBrowser({
         />
       </div>
     </div>
+  )
+}
+
+function RailLink({
+  href,
+  active,
+  name,
+  count,
+}: {
+  href: string
+  active: boolean
+  name: string
+  count?: number
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? 'page' : undefined}
+      className={`flex items-baseline justify-between gap-3 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13.5px] lg:whitespace-normal ${
+        active ? 'bg-fg font-semibold text-bg' : 'bg-tile hover:bg-tile-2 lg:bg-transparent'
+      }`}
+    >
+      <span className="min-w-0">{name}</span>
+      {count !== undefined && (
+        <span className={`tnum shrink-0 text-[12px] ${active ? 'text-bg/70' : 'text-fg-3'}`}>
+          {formatCount(count)}
+        </span>
+      )}
+    </Link>
   )
 }

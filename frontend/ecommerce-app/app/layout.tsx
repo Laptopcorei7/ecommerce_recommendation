@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
+import { Archivo } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { SiteFooter } from '@/components/site-footer'
@@ -7,25 +7,16 @@ import { SiteHeader } from '@/components/site-header'
 import { getCategories, getHealth, type Category } from '@/lib/api'
 
 /**
- * IBM Plex, sans and mono.
+ * Archivo, loaded as one variable file with its width axis.
  *
- * Plex was drawn for IBM's technical documentation, which is the register this
- * catalogue is written in, and the two faces are metrically related so a mono
- * part number sits on the same baseline as the sans title beside it. That
- * pairing is the whole typographic system: sans for prose, mono for anything
- * measured.
+ * The width axis is what gives the site two voices from one family: 125 for
+ * the display headings (`.display` in globals.css) and the default 100 for
+ * everything a reader has to actually read.
  */
-const sans = IBM_Plex_Sans({
+const archivo = Archivo({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-plex-sans',
-  display: 'swap',
-})
-
-const mono = IBM_Plex_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-plex-mono',
+  axes: ['wdth'],
+  variable: '--font-archivo',
   display: 'swap',
 })
 
@@ -58,12 +49,13 @@ export default async function RootLayout({
       alpha: health.alpha ?? 0,
       ok: health.status === 'ok',
     }
-  } catch {
-    // Handled by the status band rather than by failing the render.
+  } catch (err) {
+    // Handled by the status strip rather than by failing the render.
+    console.error('Layout could not reach the model service:', err)
   }
 
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={archivo.variable}>
       <body className="flex min-h-screen flex-col">
         <Providers>
           <SiteHeader categories={categories} stats={stats} />

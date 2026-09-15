@@ -80,7 +80,7 @@ export function SearchField({ initial = '' }: { initial?: string }) {
           if (q.trim()) submit(q)
         }}
       >
-        <div className="flex">
+        <div className="flex items-center rounded-full bg-tile pl-4 pr-1 focus-within:shadow-[0_0_0_2px_var(--fg)]">
           <input
             type="search"
             value={q}
@@ -108,10 +108,17 @@ export function SearchField({ initial = '' }: { initial?: string }) {
             aria-label="Search the catalogue"
             aria-expanded={showing}
             aria-controls={listId}
-            className="field border-r-0"
+            className="w-full min-w-0 bg-transparent py-2 text-[14.5px] outline-none placeholder:text-fg-3"
           />
-          <button type="submit" className="btn shrink-0" aria-label="Search">
-            Find
+          <button
+            type="submit"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-fg text-bg hover:bg-volt hover:text-fg"
+            aria-label="Search"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="2.5" />
+              <path d="m16 16 4.5 4.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
           </button>
         </div>
       </form>
@@ -119,10 +126,10 @@ export function SearchField({ initial = '' }: { initial?: string }) {
       {showing && (
         <div
           id={listId}
-          className="absolute left-0 right-0 top-full z-50 border border-ink bg-surface"
+          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden border-2 border-fg bg-bg"
         >
           {items.length === 0 ? (
-            <p className="px-3 py-3 text-[12px] text-ink-3">
+            <p className="meta px-4 py-3">
               Nothing matches “{q.trim()}”.
             </p>
           ) : (
@@ -136,22 +143,20 @@ export function SearchField({ initial = '' }: { initial?: string }) {
                     setOpen(false)
                     router.push(`/product/${p.id}`)
                   }}
-                  className={`flex w-full items-center gap-2 border-b border-rule px-3 py-2 text-left ${
-                    i === active ? 'bg-paper-sunk' : ''
+                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-left ${
+                    i === active ? 'bg-tile' : ''
                   }`}
                 >
-                  <span className="line-clamp-1 flex-1 text-[12.5px]">
+                  <span className="line-clamp-1 flex-1 text-[13.5px]">
                     {shortTitle(p.title, 72)}
                   </span>
-                  <span className="font-mono tnum shrink-0 text-[10px] text-ink-3">
-                    {p.id}
-                  </span>
+                  <span className="meta tnum shrink-0">{p.id}</span>
                 </button>
               ))}
               <button
                 type="button"
                 onClick={() => submit(q)}
-                className="label block w-full px-3 py-2 text-left hover:text-signal"
+                className="block w-full bg-volt px-4 py-2.5 text-left text-[13px] font-bold hover:bg-fg hover:text-volt"
               >
                 See all {formatCount(total)} matches →
               </button>

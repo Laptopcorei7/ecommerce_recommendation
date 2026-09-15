@@ -13,20 +13,31 @@ import { useStore } from '@/app/providers'
  */
 export function CartLink() {
   const { count, ready } = useStore()
+  const filled = ready && count > 0
 
   return (
     <Link
       href="/cart"
-      className="label flex items-center gap-1.5 hover:text-signal"
+      className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-tile"
       aria-label={ready ? `Cart, ${count} items` : 'Cart'}
     >
-      Cart
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.2"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="9.5" cy="19.5" r="1.5" fill="currentColor" />
+        <circle cx="17" cy="19.5" r="1.5" fill="currentColor" />
+      </svg>
       <span
-        className={`tnum inline-flex min-w-[18px] items-center justify-center px-1 py-0.5 text-[10px] ${
-          ready && count > 0 ? 'bg-signal text-white' : 'bg-rule text-ink-3'
+        className={`tnum absolute -right-0.5 -top-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-bg px-1 text-[10.5px] font-bold ${
+          filled ? 'bg-volt text-fg' : 'bg-tile text-fg-3'
         }`}
       >
-        {ready ? count : '·'}
+        {ready ? count : ''}
       </span>
     </Link>
   )

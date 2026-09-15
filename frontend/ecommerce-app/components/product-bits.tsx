@@ -9,19 +9,18 @@
 import Image from 'next/image'
 import { formatCount, formatPrice, formatRating } from '@/lib/format'
 
-/* -------------------------------------------------------------- image plate */
+/* -------------------------------------------------------------- image tile */
 
 /**
  * Every product photo here is an Amazon cutout on a white background, and 3 of
  * 62,222 records have no image at all.
  *
- * The plate gives the photo a white field with a hairline edge so it reads as
- * a contained object against the paper ground, and `mix-blend-mode: multiply`
- * in globals.css dissolves the photo's own white box into that field so there
- * is no visible second edge inside the first.
+ * The photo sits on a grey tile, and `mix-blend-mode: multiply` in globals.css
+ * turns its white box into the tile colour, so the object stands on the tile
+ * with no second edge around it.
  *
- * The missing-image case gets the part number set in mono rather than a grey
- * rectangle with a camera glyph. The id is the one true thing available.
+ * The missing-image case shows the part number rather than a camera glyph.
+ * The id is the one true thing available.
  */
 export function ProductImage({
   src,
@@ -38,9 +37,9 @@ export function ProductImage({
 }) {
   if (!src) {
     return (
-      <div className="plate h-full w-full bg-paper-sunk">
-        <span className="label px-2 text-center leading-relaxed">
-          no image
+      <div className="tile h-full w-full">
+        <span className="meta px-2 text-center">
+          No image
           <br />
           {id}
         </span>
@@ -48,14 +47,14 @@ export function ProductImage({
     )
   }
   return (
-    <div className="plate h-full w-full">
+    <div className="tile h-full w-full">
       <Image
         src={src}
         alt={alt}
         fill
         sizes={sizes}
         priority={priority}
-        className="object-contain p-2"
+        className="object-contain p-[8%]"
       />
     </div>
   )
@@ -67,8 +66,8 @@ export function ProductImage({
  * 45.2% of this catalogue has no price.
  *
  * That is too much of it to paper over with a dash, and far too much to render
- * as $0.00. An unpriced product says so, in the muted label style, so a column
- * of them reads as a known gap in the data rather than as broken layout.
+ * as $0.00. An unpriced product says so in a pill, so a grid of them reads as
+ * a known gap in the data rather than as broken layout.
  */
 export function Price({
   value,
@@ -79,18 +78,16 @@ export function Price({
 }) {
   const formatted = formatPrice(value)
   const scale =
-    size === 'lg' ? 'text-[22px]' : size === 'sm' ? 'text-[12px]' : 'text-[15px]'
+    size === 'lg' ? 'text-[30px]' : size === 'sm' ? 'text-[13px]' : 'text-[17px]'
 
   if (!formatted) {
     return (
-      <span className={`label ${size === 'lg' ? 'text-[11px]' : ''}`} title="This product has no price in the source data">
-        no price
+      <span className="pill" title="This product has no price in the source data">
+        No price
       </span>
     )
   }
-  return (
-    <span className={`font-mono tnum font-medium ${scale}`}>{formatted}</span>
-  )
+  return <span className={`tnum font-bold ${scale}`}>{formatted}</span>
 }
 
 /* ------------------------------------------------------------------- rating */
@@ -98,12 +95,10 @@ export function Price({
 /**
  * A number and a bar, not five stars.
  *
- * Stars cost more space than they carry information in, they round 4.3 and 4.7
- * to the same picture, and a row of gold stars is the single most recognisable
- * piece of generic storefront furniture there is. The bar is proportional, so
- * 4.3 and 4.7 look different, and the count sits next to it because on this
- * data the count is the more useful of the two: ratings cluster hard around
- * 4.5, while counts range from 0 to 349,254.
+ * Stars round 4.3 and 4.7 to the same picture. The bar is proportional, so they
+ * look different, and the count sits next to it because on this data the
+ * count is the more useful of the two: ratings cluster hard around 4.5, while
+ * counts range from 0 to 349,254.
  */
 export function Rating({
   value,
@@ -115,26 +110,21 @@ export function Rating({
   showCount?: boolean
 }) {
   if (value === null || value === undefined) {
-    return <span className="label">unrated</span>
+    return <span className="meta">Unrated</span>
   }
   const pct = Math.max(0, Math.min(100, (value / 5) * 100))
   return (
-    <span className="inline-flex items-center gap-1.5 align-middle">
-      <span className="font-mono tnum text-[12px] text-ink">{formatRating(value)}</span>
+    <span className="inline-flex items-center gap-2 align-middle">
+      <span className="tnum text-[13px] font-semibold">{formatRating(value)}</span>
       <span
-        className="relative inline-block h-[3px] w-8 bg-rule"
+        className="relative inline-block h-1.5 w-10 overflow-hidden rounded-full bg-tile-2"
         role="img"
         aria-label={`${formatRating(value)} out of 5`}
       >
-        <span
-          className="absolute inset-y-0 left-0 bg-ink"
-          style={{ width: `${pct}%` }}
-        />
+        <span className="absolute inset-y-0 left-0 bg-fg" style={{ width: `${pct}%` }} />
       </span>
       {showCount && count !== null && count !== undefined && (
-        <span className="font-mono tnum text-[11px] text-ink-3">
-          {formatCount(count)}
-        </span>
+        <span className="meta tnum">{formatCount(count)} ratings</span>
       )}
     </span>
   )
@@ -147,11 +137,10 @@ export function Rating({
  *
  * The blend is `alpha * collaborative + (1 - alpha) * content`, both halves
  * standardized, and the API returns the two weighted terms so they sum to the
- * score. Drawing them as a split bar makes the model's real behaviour visible,
- * which on this model is worth seeing: the collaborative half does very nearly
- * all of the work and the content half contributes almost nothing. That is the
- * honest picture, and the alpha control on the recommendations page lets a
- * reader confirm it rather than take it on trust.
+ * score. Drawing them as a split bar makes the model's real behaviour visible:
+ * the collaborative half does very nearly all of the work and the content
+ * half contributes almost nothing. The alpha control on the recommendations
+ * page lets a reader confirm it rather than take it on trust.
  *
  * Bars are drawn against the strongest score in the list, so the first row is
  * always full width and the rest are read relative to it.
@@ -173,7 +162,7 @@ export function ScoreSplit({
 
   return (
     <span
-      className="flex h-[3px] w-full bg-rule"
+      className="flex h-2 w-full overflow-hidden rounded-full bg-tile-2"
       role="img"
       aria-label={`collaborative ${collaborative.toFixed(3)}, content ${content.toFixed(3)}`}
     >

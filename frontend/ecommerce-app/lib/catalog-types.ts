@@ -32,6 +32,15 @@ export type Product = {
   /** The two weighted halves of the blend. They sum to score. */
   collaborative?: number | null
   content?: number | null
+  /** Present on a shopper's history only: the rating that shopper gave it. */
+  user_rating?: number | null
+}
+
+/** A shopper from the training data, described by what they actually rated. */
+export type Shopper = {
+  id: string
+  rated: number
+  top_category: string | null
 }
 
 export type Category = {
@@ -58,6 +67,10 @@ export type Recommendations = {
   count: number
   alpha: number
   items: Product[]
+  /** How many items this shopper rated in training. */
+  rated: number
+  /** Their highest-rated items, which the picks are excluded from. */
+  history: Product[]
 }
 
 export type Sort = 'popular' | 'rating' | 'price-asc' | 'price-desc' | 'title'

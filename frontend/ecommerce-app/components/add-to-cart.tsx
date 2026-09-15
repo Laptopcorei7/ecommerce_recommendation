@@ -16,11 +16,13 @@ export function AddToCart({
   product,
   qty = 1,
   full = false,
+  small = false,
   label = 'Add',
 }: {
   product: Product
   qty?: number
   full?: boolean
+  small?: boolean
   label?: string
 }) {
   const { add, ready } = useStore()
@@ -36,7 +38,7 @@ export function AddToCart({
   return (
     <button
       type="button"
-      className={`btn ${full ? 'w-full' : ''}`}
+      className={`btn ${small ? 'btn-sm' : ''} ${full ? 'w-full' : ''}`}
       disabled={!ready}
       onClick={() => {
         add(

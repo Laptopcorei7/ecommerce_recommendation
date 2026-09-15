@@ -29,7 +29,7 @@ export function SortSelect({
 
   return (
     <label className="flex items-center gap-2">
-      <span className="label">Sort</span>
+      <span className="text-[12.5px] font-bold uppercase">Sort</span>
       <select
         value={value}
         onChange={(e) => {
@@ -40,7 +40,7 @@ export function SortSelect({
           qs.delete('page')
           router.push(`${basePath}?${qs}`)
         }}
-        className="field w-auto py-1 text-[12px]"
+        className="field w-auto rounded-full border-0 bg-tile py-1.5 pl-4 text-[13.5px] font-medium"
       >
         {SORTS.map((s) => (
           <option key={s.value} value={s.value}>

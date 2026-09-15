@@ -21,6 +21,7 @@ export type {
   ProductDetail,
   ProductPage,
   Recommendations,
+  Shopper,
   Sort,
 } from '@/lib/catalog-types'
 export { SORTS } from '@/lib/catalog-types'
@@ -31,6 +32,7 @@ import type {
   ProductDetail,
   ProductPage,
   Recommendations,
+  Shopper,
   Sort,
 } from '@/lib/catalog-types'
 
@@ -113,7 +115,9 @@ export function getRecommendations(userId: string, topN = 12, alpha?: number) {
 }
 
 export function getSampleUsers(n = 12) {
-  return get<{ user_ids: string[] }>(`/users/sample?n=${n}`, { revalidate: 3600 })
+  return get<{ user_ids: string[]; users: Shopper[] }>(`/users/sample?n=${n}`, {
+    revalidate: 3600,
+  })
 }
 
 export function getHealth() {

@@ -15,6 +15,7 @@ Run:  uvicorn ml_api.main:app --port 8001 --reload
 from __future__ import annotations
 
 import os
+from collections import Counter
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -107,6 +108,8 @@ class Product(BaseModel):
     # shows these instead of captioning a placement with invented copy.
     collaborative: float | None = None
     content: float | None = None
+    # Set on a shopper's history only: the rating that shopper gave the item.
+    user_rating: float | None = None
 
 
 class RecommendationResponse(BaseModel):
@@ -114,6 +117,23 @@ class RecommendationResponse(BaseModel):
     count: int
     alpha: float
     items: list[Product]
+    # What the model learned this shopper from. Without it a ranked list is
+    # an answer with no question: a reader cannot judge whether the picks fit.
+    rated: int
+    history: list[Product]
+
+
+class ShopperSummary(BaseModel):
+    id: str
+    rated: int
+    top_category: str | None = None
+
+
+class SampleUsers(BaseModel):
+    user_ids: list[str]
+    # The same shoppers, described by their real training history so the
+    # storefront can label them with something other than a 28-character id.
+    users: list[ShopperSummary]
 
 
 class Category(BaseModel):
@@ -192,6 +212,7 @@ def recommend(
     user_id: str = Query(..., description="A user id present in the training data"),
     top_n: int = Query(10, ge=1, le=100),
     alpha: float | None = Query(None, ge=0.0, le=1.0, description="Override the blend weight"),
+    history_n: int = Query(6, ge=0, le=50, description="How many rated items to return"),
 ):
     eng = _engine()
     try:
@@ -208,19 +229,64 @@ def recommend(
         )
         for r in ranked
     ]
+    rated = _rated(eng, user_id)
+    # Highest rated first, then most rated overall, so the history opens on
+    # the items that say most about this shopper's taste.
+    rated.sort(key=lambda r: (-r[1], -(state["catalog"].get(r[0], {}).get("rating_number") or 0)))
+    history = [_product(item_id, user_rating=float(value)) for item_id, value in rated[:history_n]]
+
     return RecommendationResponse(
         user_id=user_id,
         count=len(items),
         alpha=eng.alpha if alpha is None else alpha,
         items=items,
+        rated=len(rated),
+        history=history,
     )
 
 
-@app.get("/users/sample")
+def _rated(eng, user_id):
+    """(item id, rating) for every item this shopper rated in training."""
+    indices, values = eng.rated_items(eng.user_to_idx[user_id])
+    return [(str(eng.item_ids[i]), v) for i, v in zip(indices, values)]
+
+
+SAMPLE_SCAN = 2000
+
+
+def _summary(eng, uid):
+    rated = _rated(eng, uid)
+    buckets = Counter(b["name"] for b in (state["index"].bucket(i) for i, _ in rated) if b)
+    top = buckets.most_common(1)
+    return ShopperSummary(id=uid, rated=len(rated), top_category=top[0][0] if top else None)
+
+
+@app.get("/users/sample", response_model=SampleUsers)
 def sample_users(n: int = Query(10, ge=1, le=100)):
-    """Valid user ids, so the storefront and the docs have something to call with."""
+    """Valid shoppers to recommend for, chosen to be told apart.
+
+    The first n ids in the file were 27 of 40 "mostly Computers & Accessories",
+    which is 43% of the catalogue, so the storefront's labels could not tell
+    them apart. This scans the first SAMPLE_SCAN shoppers, groups them by the
+    category they rate most, and deals them out one category at a time with
+    the longest histories first. It is deterministic, so a numbered shopper in
+    the storefront is the same person on every visit.
+    """
     eng = _engine()
-    return {"user_ids": [str(u) for u in eng.m["user_ids"][:n]]}
+    groups = {}
+    for uid in eng.m["user_ids"][:max(n, SAMPLE_SCAN)]:
+        s = _summary(eng, str(uid))
+        groups.setdefault(s.top_category, []).append(s)
+    queues = sorted(groups.values(), key=len, reverse=True)
+    for q in queues:
+        q.sort(key=lambda s: -s.rated)
+
+    users = []
+    while len(users) < n and any(queues):
+        for q in queues:
+            if q and len(users) < n:
+                users.append(q.pop(0))
+    return SampleUsers(user_ids=[u.id for u in users], users=users)
 
 
 # --- catalogue --------------------------------------------------------------

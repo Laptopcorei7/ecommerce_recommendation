@@ -5,18 +5,13 @@ import { CartLink } from '@/components/cart-link'
 import { SearchField } from '@/components/search-field'
 
 /**
- * The header, in three bands.
+ * The header: a yellow strip and a white bar.
  *
- * The top band carries the real state of the system: how many products are
- * loaded, how many shoppers the model was fitted on, and the blend weight it
- * is serving at. A storefront strip normally holds a shipping promise, but
- * this catalogue does not ship anything, so an invented "free delivery over
- * $50" would be the first lie on the page. The numbers are true and they tell
- * a reader what they are actually looking at.
- *
- * The third band is the category index. Seven of the previous build's dead
- * links pointed at category pages that did not exist; these point at real
- * buckets with real counts.
+ * On a merch store the yellow strip holds a shipping promise or a drop. This
+ * catalogue ships nothing, so an invented "free delivery over $50" would be
+ * the first lie on the page. The strip carries the real state of the system
+ * instead: products loaded, shoppers the model was fitted on, the blend weight
+ * it is serving at, and whether the model service is up.
  */
 export function SiteHeader({
   categories,
@@ -25,83 +20,59 @@ export function SiteHeader({
   categories: Category[]
   stats: { products?: number; users?: number; alpha?: number; ok: boolean }
 }) {
-  const top = categories.slice(0, 6)
-
   return (
-    <header className="sticky top-0 z-40 border-b border-rule-heavy bg-paper">
-      {/* Band 1 — system state */}
-      <div className="bg-ink text-paper">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5">
-          <span className="label text-paper/60">
-            {formatCount(stats.products ?? 0)} products
+    <header className="sticky top-0 z-40 bg-bg shadow-[0_1px_0_var(--tile-2)]">
+      <div className="bg-volt">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-5 gap-y-0.5 px-4 py-2 text-[12.5px] font-semibold">
+          <span className="tnum">{formatCount(stats.products ?? 0)} products</span>
+          <span className="tnum">{formatCount(stats.users ?? 0)} modelled shoppers</span>
+          <span className="tnum hidden sm:inline">
+            {categories.length} categories, blend alpha {(stats.alpha ?? 0).toFixed(2)}
           </span>
-          <span className="label text-paper/60">
-            {formatCount(stats.users ?? 0)} modelled shoppers
-          </span>
-          <span className="label text-paper/60">
-            hybrid alpha {(stats.alpha ?? 0).toFixed(2)}
-          </span>
-          <span className="label ml-auto flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5">
             <span
-              className={`inline-block h-1.5 w-1.5 ${stats.ok ? 'bg-emerald-400' : 'bg-signal'}`}
+              className={`inline-block h-2 w-2 rounded-full ${stats.ok ? 'bg-fg' : 'bg-alert'}`}
               aria-hidden
             />
-            <span className="text-paper/60">
-              model service {stats.ok ? 'online' : 'unreachable'}
-            </span>
+            Model service {stats.ok ? 'online' : 'unreachable'}
           </span>
         </div>
       </div>
 
-      {/* Band 2 — wordmark, search, cart */}
-      <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-4 py-3">
-        <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="inline-block h-3 w-3 bg-signal" aria-hidden />
-          <span className="font-mono text-[15px] font-semibold tracking-[0.14em]">
-            ELECTROHUB
-          </span>
+      <div className="mx-auto flex max-w-[1400px] items-center gap-6 px-4 py-3.5">
+        <Link href="/" className="display shrink-0 text-[22px] sm:text-[26px]">
+          ElectroHub
         </Link>
 
-        <div className="hidden min-w-0 flex-1 md:block">
+        <nav
+          className="hidden items-center gap-6 text-[13px] font-semibold uppercase tracking-[0.06em] lg:flex"
+          aria-label="Main"
+        >
+          <Link href="/catalog" className="hover:underline hover:decoration-2 hover:underline-offset-4">
+            Catalogue
+          </Link>
+          <Link
+            href="/recommendations"
+            className="hover:underline hover:decoration-2 hover:underline-offset-4"
+          >
+            Recommendations
+          </Link>
+        </nav>
+
+        <div className="ml-auto hidden w-full max-w-[420px] md:block">
           <SearchField />
         </div>
 
-        <nav className="ml-auto flex shrink-0 items-center gap-4" aria-label="Main">
-          <Link href="/catalog" className="label hover:text-signal">
-            Catalogue
-          </Link>
-          <Link href="/recommendations" className="label hover:text-signal">
-            Recommendations
+        <div className="ml-auto flex items-center gap-4 md:ml-0">
+          <Link href="/catalog" className="text-[13px] font-semibold uppercase lg:hidden">
+            Shop
           </Link>
           <CartLink />
-        </nav>
-      </div>
-
-      {/* Band 2b — search on narrow screens, where it needs the full width */}
-      <div className="border-t border-rule px-4 py-2 md:hidden">
-        <SearchField />
-      </div>
-
-      {/* Band 3 — category index */}
-      <div className="border-t border-rule bg-paper-sunk">
-        <div className="mx-auto flex max-w-[1400px] items-center gap-x-5 gap-y-1 overflow-x-auto px-4 py-1.5">
-          {top.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/categories/${c.slug}`}
-              className="label whitespace-nowrap hover:text-signal"
-            >
-              {c.name}{' '}
-              <span className="tnum text-ink-3/70">{formatCount(c.count)}</span>
-            </Link>
-          ))}
-          <Link
-            href="/catalog"
-            className="label ml-auto whitespace-nowrap text-signal"
-          >
-            All {categories.length} categories →
-          </Link>
         </div>
+      </div>
+
+      <div className="px-4 pb-3 md:hidden">
+        <SearchField />
       </div>
     </header>
   )

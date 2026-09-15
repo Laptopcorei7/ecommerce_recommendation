@@ -33,11 +33,9 @@ export default async function CatalogPage({
 
   return (
     <div className="mx-auto max-w-[1400px] px-4">
-      <div className="border-b-2 border-rule-heavy pb-4 pt-8">
-        <p className="label mb-2">Catalogue</p>
-        <h1 className="text-[26px] font-semibold leading-tight">
-          {q ? `Search: ${q}` : 'All products'}
-        </h1>
+      <div className="page-head">
+        <p className="meta mb-3">Catalogue</p>
+        <h1 className="display break-words">{q ? `Search: ${q}` : 'All products'}</h1>
       </div>
 
       <CatalogBrowser

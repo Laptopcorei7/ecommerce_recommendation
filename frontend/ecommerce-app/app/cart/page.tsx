@@ -22,7 +22,7 @@ export default function CartPage() {
   if (!ready) {
     return (
       <div className="mx-auto max-w-[1400px] px-4 py-16">
-        <p className="label">Loading your cart</p>
+        <p className="meta">Loading your cart</p>
       </div>
     )
   }
@@ -30,23 +30,21 @@ export default function CartPage() {
   if (lines.length === 0) {
     return (
       <div className="mx-auto max-w-[1400px] px-4">
-        <div className="border-b-2 border-rule-heavy pb-4 pt-8">
-          <p className="label mb-2">Cart</p>
-          <h1 className="text-[26px] font-semibold">Nothing in the cart.</h1>
+        <div className="page-head">
+          <p className="meta mb-3">Cart</p>
+          <h1 className="display">Nothing in the cart.</h1>
         </div>
-        <div className="py-12">
-          <p className="max-w-[52ch] text-[14px] leading-relaxed text-ink-2">
-            Add something from the catalogue, or let the recommender pick for
-            one of the shoppers the model was trained on.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link href="/catalog" className="btn">
-              Browse the catalogue
-            </Link>
-            <Link href="/recommendations" className="btn btn-line">
-              Run the recommender
-            </Link>
-          </div>
+        <p className="max-w-[52ch] text-[16px] leading-relaxed text-fg-2">
+          Add something from the catalogue, or let the recommender pick for one
+          of the shoppers the model was trained on.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link href="/catalog" className="btn">
+            Shop the catalogue
+          </Link>
+          <Link href="/recommendations" className="btn btn-volt">
+            Run the recommender
+          </Link>
         </div>
       </div>
     )
@@ -54,68 +52,60 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] px-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-4 border-b-2 border-rule-heavy pb-4 pt-8">
+      <div className="page-head flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="label mb-2">Cart</p>
-          <h1 className="text-[26px] font-semibold">
+          <p className="meta mb-3">Cart</p>
+          <h1 className="display tnum">
             {formatCount(count)} {count === 1 ? 'item' : 'items'}
           </h1>
         </div>
-        <button type="button" onClick={clear} className="label hover:text-signal">
+        <button type="button" onClick={clear} className="btn btn-line btn-sm">
           Empty the cart
         </button>
       </div>
 
-      <div className="grid gap-8 py-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-8 pb-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* ---- lines ---- */}
-        <div className="border-t border-rule">
+        <div className="space-y-2">
           {lines.map((line) => {
             const price = formatPrice(line.price)
             const lineTotal = formatPrice((line.price ?? 0) * line.qty)
+            const name = shortTitle(line.title, 40)
             return (
               <div
                 key={line.id}
-                className="grid grid-cols-[72px_minmax(0,1fr)_auto] items-start gap-4 border-b border-rule py-4"
+                className="grid grid-cols-[80px_minmax(0,1fr)] items-start gap-4 bg-tile-soft p-3 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:p-4"
               >
-                <Link href={`/product/${line.id}`} className="block aspect-square w-[72px]">
-                  <ProductImage
-                    src={line.image}
-                    alt={line.title}
-                    id={line.id}
-                    sizes="72px"
-                  />
+                <Link href={`/product/${line.id}`} className="block aspect-square">
+                  <ProductImage src={line.image} alt={line.title} id={line.id} sizes="96px" />
                 </Link>
 
                 <div className="min-w-0">
-                  {line.store && <p className="label mb-1 text-ink-2">{line.store}</p>}
+                  {line.store && <p className="mb-1 text-[12.5px] font-semibold">{line.store}</p>}
                   <Link href={`/product/${line.id}`} className="block">
-                    <h2 className="text-[13.5px] leading-snug hover:text-signal">
+                    <h2 className="text-[15px] leading-snug hover:underline">
                       {shortTitle(line.title, 130)}
                     </h2>
                   </Link>
-                  <p className="mt-1 font-mono tnum text-[11px] text-ink-3">
-                    {line.id}
-                  </p>
+                  <p className="meta tnum mt-1">{line.id}</p>
 
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <div className="flex w-[96px]">
+                    <div className="flex h-9 items-center rounded-full bg-bg">
                       <button
                         type="button"
-                        className="btn btn-line px-2"
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-[16px] font-bold hover:bg-tile-2"
                         onClick={() => setQty(line.id, line.qty - 1)}
-                        aria-label={`Decrease quantity of ${shortTitle(line.title, 40)}`}
+                        aria-label={`Decrease quantity of ${name}`}
                       >
                         −
                       </button>
-                      <span className="field tnum flex-1 border-x-0 px-0 text-center font-mono text-[13px]">
-                        {line.qty}
-                      </span>
+                      <span className="tnum w-7 text-center text-[14px] font-bold">{line.qty}</span>
                       <button
                         type="button"
-                        className="btn btn-line px-2"
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-[16px] font-bold hover:bg-tile-2 disabled:text-fg-3"
                         onClick={() => setQty(line.id, line.qty + 1)}
                         disabled={line.qty >= 99}
-                        aria-label={`Increase quantity of ${shortTitle(line.title, 40)}`}
+                        aria-label={`Increase quantity of ${name}`}
                       >
                         +
                       </button>
@@ -123,25 +113,21 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => remove(line.id)}
-                      className="label hover:text-signal"
+                      className="text-[13px] font-semibold underline decoration-2 underline-offset-4 hover:decoration-volt"
                     >
                       Remove
                     </button>
                   </div>
                 </div>
 
-                <div className="w-[110px] text-right">
+                <div className="col-span-2 flex items-baseline justify-between gap-3 sm:col-span-1 sm:block sm:w-[110px] sm:text-right">
                   {price ? (
                     <>
-                      <div className="font-mono tnum text-[15px] font-medium">
-                        {lineTotal}
-                      </div>
-                      {line.qty > 1 && (
-                        <div className="label mt-1">{price} each</div>
-                      )}
+                      <div className="tnum text-[17px] font-bold">{lineTotal}</div>
+                      {line.qty > 1 && <div className="meta tnum mt-1">{price} each</div>}
                     </>
                   ) : (
-                    <span className="label">no price</span>
+                    <span className="pill bg-bg">No price</span>
                   )}
                 </div>
               </div>
@@ -150,50 +136,43 @@ export default function CartPage() {
         </div>
 
         {/* ---- summary ---- */}
-        <aside className="lg:sticky lg:top-[150px] lg:self-start">
-          <div className="border border-rule bg-paper-sunk">
-            <h2 className="label border-b border-rule px-4 py-2.5 text-ink">
-              Summary
-            </h2>
-            <dl className="px-4 py-3 text-[13px]">
-              <div className="flex justify-between gap-4 py-1">
-                <dt className="text-ink-2">Items</dt>
-                <dd className="font-mono tnum">{formatCount(count)}</dd>
+        <aside className="lg:sticky lg:top-[132px] lg:self-start">
+          <div className="bg-tile p-5">
+            <h2 className="display mb-4 text-[18px]">Summary</h2>
+            <dl className="space-y-2 text-[14.5px]">
+              <div className="flex justify-between gap-4">
+                <dt className="text-fg-2">Items</dt>
+                <dd className="tnum font-semibold">{formatCount(count)}</dd>
               </div>
-              <div className="flex justify-between gap-4 py-1">
-                <dt className="text-ink-2">Priced subtotal</dt>
-                <dd className="font-mono tnum">{formatPrice(subtotal)}</dd>
+              <div className="flex justify-between gap-4">
+                <dt className="text-fg-2">Priced subtotal</dt>
+                <dd className="tnum font-bold">{formatPrice(subtotal)}</dd>
               </div>
               {unpriced > 0 && (
-                <div className="flex justify-between gap-4 py-1">
-                  <dt className="text-ink-2">Unpriced items</dt>
-                  <dd className="font-mono tnum text-signal">
-                    {formatCount(unpriced)}
-                  </dd>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-fg-2">Unpriced items</dt>
+                  <dd className="tnum font-bold text-alert">{formatCount(unpriced)}</dd>
                 </div>
               )}
             </dl>
 
             {unpriced > 0 && (
-              <p className="border-t border-rule px-4 py-3 text-[12px] leading-relaxed text-ink-2">
+              <p className="mt-4 text-[13px] leading-relaxed text-fg-2">
                 {unpriced === count ? 'Every item' : `${formatCount(unpriced)} of these items`}{' '}
                 {unpriced === 1 ? 'has' : 'have'} no price in the source data, so
-                the subtotal above does not include{' '}
-                {unpriced === 1 ? 'it' : 'them'}.
+                the subtotal above does not include {unpriced === 1 ? 'it' : 'them'}.
               </p>
             )}
 
-            <div className="border-t border-rule p-4">
-              <Link href="/checkout" className="btn w-full">
-                Checkout
-              </Link>
-              <Link
-                href="/catalog"
-                className="label mt-3 block text-center hover:text-signal"
-              >
-                Keep browsing
-              </Link>
-            </div>
+            <Link href="/checkout" className="btn btn-volt mt-5 w-full">
+              Checkout
+            </Link>
+            <Link
+              href="/catalog"
+              className="mt-4 block text-center text-[13px] font-semibold underline decoration-2 underline-offset-4"
+            >
+              Keep browsing
+            </Link>
           </div>
         </aside>
       </div>

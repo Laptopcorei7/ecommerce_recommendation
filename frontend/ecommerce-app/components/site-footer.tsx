@@ -16,40 +16,33 @@ import { formatCount } from '@/lib/format'
  */
 export function SiteFooter({ categories }: { categories: Category[] }) {
   return (
-    <footer className="mt-16 border-t-2 border-rule-heavy bg-paper-sunk">
-      <div className="mx-auto grid max-w-[1400px] gap-8 px-4 py-10 md:grid-cols-[2fr_1fr_1fr]">
+    <footer className="mt-20 bg-band text-bg">
+      <div className="mx-auto grid max-w-[1400px] gap-10 px-4 py-14 md:grid-cols-[2fr_1fr_1fr]">
         <div>
-          <div className="mb-3 flex items-center gap-2">
-            <span className="inline-block h-3 w-3 bg-signal" aria-hidden />
-            <span className="font-mono text-[14px] font-semibold tracking-[0.14em]">
-              ELECTROHUB
-            </span>
-          </div>
-          <p className="max-w-[46ch] text-[13px] leading-relaxed text-ink-2">
+          <p className="display mb-5 text-[34px] sm:text-[44px]">ElectroHub</p>
+          <p className="max-w-[46ch] text-[14px] leading-relaxed text-bg/80">
             A storefront over a hybrid recommender. Products, prices, ratings and
             images are real records from the Amazon Reviews 2023 Electronics
             benchmark, and the rankings come from a model fitted on 1,179,677 of
             its interactions.
           </p>
-          <p className="mt-3 max-w-[46ch] text-[13px] leading-relaxed text-ink-3">
+          <p className="mt-3 max-w-[46ch] text-[14px] leading-relaxed text-bg/60">
             Nothing here ships. There is no payment step and no account, which is
             why there are no shipping, returns or sign-in pages to link to.
           </p>
         </div>
 
         <nav aria-label="Categories">
-          <h2 className="label mb-3 text-ink">Categories</h2>
-          <ul className="space-y-1.5">
+          <h2 className="display mb-4 text-[15px] text-volt">Categories</h2>
+          <ul className="space-y-2">
             {categories.slice(0, 8).map((c) => (
               <li key={c.slug}>
                 <Link
                   href={`/categories/${c.slug}`}
-                  className="flex justify-between gap-3 text-[12.5px] text-ink-2 hover:text-signal"
+                  className="flex justify-between gap-3 text-[14px] hover:underline"
                 >
                   <span>{c.name}</span>
-                  <span className="font-mono tnum text-[11px] text-ink-3">
-                    {formatCount(c.count)}
-                  </span>
+                  <span className="tnum text-[12.5px] text-bg/60">{formatCount(c.count)}</span>
                 </Link>
               </li>
             ))}
@@ -57,8 +50,8 @@ export function SiteFooter({ categories }: { categories: Category[] }) {
         </nav>
 
         <div>
-          <h2 className="label mb-3 text-ink">Colophon</h2>
-          <dl className="space-y-1.5 text-[12.5px]">
+          <h2 className="display mb-4 text-[15px] text-volt">Colophon</h2>
+          <dl className="space-y-2 text-[14px]">
             {[
               ['Data', 'Amazon Reviews 2023, Electronics 5-core'],
               ['Ranking', 'Implicit ALS, 64 factors'],
@@ -66,22 +59,22 @@ export function SiteFooter({ categories }: { categories: Category[] }) {
               ['Blend', 'alpha 0.90, standardized halves'],
               ['Serving', 'FastAPI, Next.js App Router'],
             ].map(([term, value]) => (
-              <div key={term} className="flex gap-2">
-                <dt className="label w-[58px] shrink-0 pt-[3px]">{term}</dt>
-                <dd className="text-ink-2">{value}</dd>
+              <div key={term} className="flex gap-3">
+                <dt className="w-[64px] shrink-0 font-semibold">{term}</dt>
+                <dd className="text-bg/70">{value}</dd>
               </div>
             ))}
           </dl>
         </div>
       </div>
 
-      <div className="border-t border-rule">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap gap-x-4 gap-y-1 px-4 py-3">
-          <span className="label">Built as a recommender systems project</span>
-          <Link href="/catalog" className="label ml-auto hover:text-signal">
+      <div className="border-t border-bg/15">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap gap-x-6 gap-y-2 px-4 py-4 text-[13px]">
+          <span className="text-bg/60">Built as a recommender systems project</span>
+          <Link href="/catalog" className="ml-auto font-semibold uppercase hover:text-volt">
             Catalogue
           </Link>
-          <Link href="/recommendations" className="label hover:text-signal">
+          <Link href="/recommendations" className="font-semibold uppercase hover:text-volt">
             Recommendations
           </Link>
         </div>

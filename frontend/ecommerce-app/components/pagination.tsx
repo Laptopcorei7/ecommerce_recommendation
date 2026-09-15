@@ -39,17 +39,17 @@ export function Pagination({
 
   return (
     <nav
-      className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-rule pt-4"
+      className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-3"
       aria-label="Pagination"
     >
-      <span className="label">
-        Page <span className="tnum text-ink">{formatCount(page)}</span> of{' '}
-        <span className="tnum text-ink">{formatCount(pages)}</span>
+      <span className="text-[14px] text-fg-2">
+        Page <span className="tnum font-bold text-fg">{formatCount(page)}</span> of{' '}
+        <span className="tnum font-bold text-fg">{formatCount(pages)}</span>
       </span>
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex flex-wrap items-center gap-1.5">
         {page > 1 && (
-          <Link href={href(page - 1)} className="btn btn-line" rel="prev">
+          <Link href={href(page - 1)} className="btn btn-line btn-sm" rel="prev">
             Prev
           </Link>
         )}
@@ -57,17 +57,20 @@ export function Pagination({
         {shown.map((p, i) => {
           const gap = i > 0 && p - shown[i - 1] > 1
           return (
-            <span key={p} className="flex items-center gap-1">
-              {gap && <span className="label px-1">…</span>}
+            <span key={p} className="flex items-center gap-1.5">
+              {gap && <span className="px-1 text-fg-3">…</span>}
               {p === page ? (
                 <span
-                  className="btn pointer-events-none tnum"
+                  className="tnum flex h-9 min-w-9 items-center justify-center rounded-full bg-volt px-2 text-[13px] font-bold"
                   aria-current="page"
                 >
                   {p}
                 </span>
               ) : (
-                <Link href={href(p)} className="btn btn-line tnum">
+                <Link
+                  href={href(p)}
+                  className="tnum flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-[13px] font-semibold hover:bg-tile"
+                >
                   {p}
                 </Link>
               )}
@@ -76,7 +79,7 @@ export function Pagination({
         })}
 
         {page < pages && (
-          <Link href={href(page + 1)} className="btn btn-line" rel="next">
+          <Link href={href(page + 1)} className="btn btn-line btn-sm" rel="next">
             Next
           </Link>
         )}

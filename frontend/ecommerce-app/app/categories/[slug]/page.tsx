@@ -64,22 +64,19 @@ export default async function CategoryPage({
 
   return (
     <div className="mx-auto max-w-[1400px] px-4">
-      <div className="border-b-2 border-rule-heavy pb-4 pt-8">
-        <nav className="label mb-2 flex gap-2" aria-label="Breadcrumb">
-          <Link href="/catalog" className="hover:text-signal">
+      <div className="page-head">
+        <nav className="meta mb-3 flex gap-2" aria-label="Breadcrumb">
+          <Link href="/catalog" className="hover:underline">
             Catalogue
           </Link>
           <span aria-hidden>/</span>
-          <span className="text-ink">{category.name}</span>
+          <span className="text-fg">{category.name}</span>
         </nav>
-        <div className="flex flex-wrap items-baseline justify-between gap-4">
-          <h1 className="text-[26px] font-semibold leading-tight">
-            {category.name}
-          </h1>
-          <p className="label">
-            <span className="tnum text-ink">{formatCount(category.count)}</span>{' '}
-            products, <span className="tnum text-ink">{(share * 100).toFixed(1)}%</span>{' '}
-            of the catalogue
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h1 className="display">{category.name}</h1>
+          <p className="pill bg-volt text-[13px]">
+            <span className="tnum">{formatCount(category.count)}</span> products,{' '}
+            <span className="tnum">{(share * 100).toFixed(1)}%</span> of the catalogue
           </p>
         </div>
       </div>

@@ -143,6 +143,26 @@ def test_users_sample_returns_ids_that_actually_work(client):
         assert client.get("/recommend/?user_id={}".format(uid)).status_code == 200
 
 
+def test_sample_shoppers_are_described_by_their_real_history(client):
+    """The storefront labels shoppers with these numbers instead of raw ids, so
+    they have to agree with what /recommend/ reports for the same shopper."""
+    body = client.get("/users/sample?n=3").json()
+    assert [u["id"] for u in body["users"]] == body["user_ids"]
+    for u in body["users"]:
+        rec = client.get("/recommend/?user_id={}".format(u["id"])).json()
+        assert u["rated"] == rec["rated"] > 0
+
+
+def test_history_is_what_the_shopper_rated_and_never_what_is_recommended(client):
+    body = client.get("/recommend/?user_id=USER00&top_n=100&history_n=50").json()
+    history = {p["id"] for p in body["history"]}
+    assert len(history) == body["rated"]
+    assert all(p["user_rating"] is not None for p in body["history"])
+    assert history.isdisjoint(p["id"] for p in body["items"])
+    ratings = [p["user_rating"] for p in body["history"]]
+    assert ratings == sorted(ratings, reverse=True)
+
+
 # --- CORS -------------------------------------------------------------------
 
 def test_the_storefront_origin_passes_preflight(client):

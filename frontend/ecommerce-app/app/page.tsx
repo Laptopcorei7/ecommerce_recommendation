@@ -1,27 +1,32 @@
 import Link from 'next/link'
 import { getCategories, getHealth, getProducts, getSampleUsers } from '@/lib/api'
-import { formatCount } from '@/lib/format'
+import { formatCount, shortTitle } from '@/lib/format'
+import { ProductImage } from '@/components/product-bits'
 import { ProductCard } from '@/components/product-list'
 import { RecPanel } from '@/components/rec-panel'
 
 /**
- * The front page is the category index.
+ * The front page, laid out like a merch drop.
  *
- * A supply catalogue opens on its contents, not on a photograph of a smiling
- * person holding a phone. What was here before was a purple-to-blue gradient,
- * a 6xl headline, two buttons and an emoji standing in for the hero image, and
- * below it six invented products with invented prices.
- *
- * Everything on this page is now a real record or a real count.
+ * A drop page leads with one big product and a heading, then a black band of
+ * round category chips, then product tiles. The layout is borrowed; the
+ * content is not. The lead product is the most-rated record in the catalogue,
+ * the chips carry real bucket counts, and every product below is a real
+ * record. A lifestyle photo would have to be invented, and so would a
+ * "Trending today" caption, so neither is here.
  */
 
 export const revalidate = 300
 
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 })
+
 export default async function Home() {
   const [categories, popular, users, health] = await Promise.all([
     getCategories().catch(() => []),
-    getProducts({ sort: 'popular', perPage: 6 }).catch(() => null),
-    getSampleUsers(24).then((r) => r.user_ids).catch(() => []),
+    getProducts({ sort: 'popular', perPage: 7 }).catch(() => null),
+    // The same 40 as the recommendations page, so "Shopper 3" is the same
+    // person on both.
+    getSampleUsers(40).then((r) => r.users).catch(() => []),
     getHealth().catch(() => null),
   ])
 
@@ -29,127 +34,137 @@ export default async function Home() {
     return <ServiceDown />
   }
 
+  const [lead, ...rest] = popular?.items ?? []
+
   return (
-    <div className="mx-auto max-w-[1400px] px-4">
-      {/* ---- front matter ------------------------------------------------ */}
-      <section className="grid gap-8 border-b-2 border-rule-heavy py-10 md:grid-cols-[1fr_auto]">
+    <>
+      {/* ---- lead ---------------------------------------------------------- */}
+      <section className="mx-auto grid max-w-[1400px] items-center gap-10 px-4 py-10 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:py-16">
         <div>
-          <p className="label mb-3">Electronics catalogue, edition 2023</p>
-          <h1 className="max-w-[18ch] text-[34px] font-semibold leading-[1.1] tracking-[-0.01em] md:text-[44px]">
+          <p className="pill mb-5">Amazon Reviews 2023, Electronics</p>
+          <h1 className="display text-[40px] sm:text-[56px] xl:text-[76px]">
             Every product the model was trained to rank.
           </h1>
-          <p className="mt-4 max-w-[60ch] text-[14px] leading-relaxed text-ink-2">
-            {formatCount(health?.catalog ?? 0)} products from the Amazon Reviews
-            2023 Electronics benchmark, with prices, ratings and photographs as
-            they appear in the source. Recommendations come from a hybrid model
-            fitted on {formatCount(health?.users ?? 0)} shoppers, and every one
-            of them shows the score that put it where it is.
+          <p className="mt-6 max-w-[56ch] text-[16px] leading-relaxed text-fg-2">
+            {formatCount(health?.catalog ?? 0)} products with prices, ratings and
+            photographs as they appear in the source. Recommendations come from a
+            hybrid model fitted on {formatCount(health?.users ?? 0)} shoppers, and
+            every one shows the score that put it where it is.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/catalog" className="btn">
-              Browse the catalogue
+              Shop the catalogue
             </Link>
-            <Link href="/recommendations" className="btn btn-line">
+            <Link href="/recommendations" className="btn btn-volt">
               Run the recommender
             </Link>
           </div>
         </div>
 
-        {/* A specification block, the way a catalogue states its own extent. */}
-        <dl className="min-w-[240px] self-start border border-rule bg-paper-sunk">
-          {[
-            ['Products', formatCount(health?.catalog ?? 0)],
-            ['Categories', formatCount(categories.length)],
-            ['Shoppers', formatCount(health?.users ?? 0)],
-            ['Interactions', '1,179,677'],
-            ['Latent factors', formatCount(health?.factors ?? 0)],
-            ['Blend alpha', (health?.alpha ?? 0).toFixed(2)],
-          ].map(([term, value]) => (
-            <div
-              key={term}
-              className="flex items-baseline justify-between gap-6 border-b border-rule px-3 py-2 last:border-b-0"
-            >
-              <dt className="label">{term}</dt>
-              <dd className="font-mono tnum text-[13px]">{value}</dd>
+        {lead && (
+          <Link href={`/product/${lead.id}`} className="group block">
+            <div className="aspect-square">
+              <ProductImage
+                src={lead.image}
+                alt={lead.title}
+                id={lead.id}
+                sizes="(max-width: 768px) 100vw, 620px"
+                priority
+              />
             </div>
-          ))}
-        </dl>
-      </section>
-
-      {/* ---- category index ---------------------------------------------- */}
-      <section className="py-10">
-        <div className="section-head">
-          <h2>Categories</h2>
-          <Link href="/catalog" className="label hover:text-signal">
-            Browse everything →
+            <p className="mt-3 flex items-baseline justify-between gap-4">
+              <span className="min-w-0 text-[14px] group-hover:underline">
+                <span className="font-semibold">Most rated: </span>
+                {shortTitle(lead.title, 80)}
+              </span>
+              <span className="meta tnum shrink-0">
+                {formatCount(lead.rating_number)} ratings
+              </span>
+            </p>
           </Link>
-        </div>
-
-        {/* Counts are right-aligned in a mono column so the distribution is
-            readable at a glance: this catalogue is 43% one category. */}
-        <ul className="grid gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((c) => (
-            <li key={c.slug}>
-              <Link
-                href={`/categories/${c.slug}`}
-                className="group flex items-baseline gap-3 border-b border-rule py-2.5"
-              >
-                <span className="text-[13.5px] group-hover:text-signal">
-                  {c.name}
-                </span>
-                <span className="min-w-0 flex-1 translate-y-[-3px] border-b border-dotted border-rule-2" />
-                <span className="font-mono tnum text-[12px] text-ink-3">
-                  {formatCount(c.count)}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        )}
       </section>
 
-      {/* ---- recommendations --------------------------------------------- */}
-      <section className="py-10">
-        <div className="section-head">
-          <h2>Recommended for a shopper</h2>
-          <span className="label">hybrid ranking, live</span>
+      {/* ---- category chips -------------------------------------------------- */}
+      <section className="bg-band text-bg" aria-labelledby="categories-heading">
+        <div className="mx-auto max-w-[1400px] px-4 py-10">
+          <div className="mb-8 flex flex-wrap items-baseline justify-between gap-4">
+            <h2 id="categories-heading" className="display text-[26px] sm:text-[36px]">
+              Shop by category
+            </h2>
+            <Link href="/catalog" className="text-[13px] font-semibold uppercase hover:text-volt">
+              All {categories.length} categories
+            </Link>
+          </div>
+          {/* The number in each chip is the bucket's product count. The
+              catalogue is 43% one category, and the chips show that. */}
+          <ul className="-mx-4 flex gap-6 overflow-x-auto px-4 pb-2">
+            {categories.map((c) => (
+              <li key={c.slug} className="shrink-0">
+                <Link href={`/categories/${c.slug}`} className="group flex w-[104px] flex-col items-center">
+                  <span className="display tnum flex h-[92px] w-[92px] items-center justify-center rounded-full bg-bg text-[19px] text-fg transition-colors group-hover:bg-volt">
+                    {compact.format(c.count)}
+                  </span>
+                  <span className="mt-3 text-center text-[13px] font-semibold leading-tight underline decoration-bg/30 decoration-2 underline-offset-4 group-hover:decoration-volt">
+                    {c.name}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
-        <RecPanel users={users} topN={5} />
       </section>
 
-      {/* ---- most rated --------------------------------------------------- */}
-      <section className="py-10">
-        <div className="section-head">
-          <h2>Most rated in the catalogue</h2>
-          <Link href="/catalog?sort=popular" className="label hover:text-signal">
-            See all →
-          </Link>
-        </div>
-        <p className="mb-5 max-w-[70ch] text-[13px] text-ink-2">
-          Ordered by number of ratings, which is the closest thing this dataset
-          has to a sales figure. This is also the popularity baseline the hybrid
-          model has to beat, and it beats it by 0.0183 to 0.0163 on hit-rate@10.
-        </p>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {popular?.items.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section>
-    </div>
+      <div className="mx-auto max-w-[1400px] px-4">
+        {/* ---- recommendations --------------------------------------------- */}
+        <section className="py-16">
+          <div className="section-head">
+            <h2 className="display">Top picks for a shopper</h2>
+            <p>
+              What the model suggests for one real shopper from the dataset, based
+              on what they rated.
+            </p>
+          </div>
+          <RecPanel users={users} topN={5} />
+        </section>
+
+        {/* ---- most rated --------------------------------------------------- */}
+        <section className="pb-4">
+          <div className="section-head">
+            <h2 className="display">Most rated</h2>
+            <p className="mx-auto max-w-[70ch]">
+              Ordered by number of ratings, the closest thing this dataset has to a
+              sales figure. This is also the popularity baseline the hybrid model
+              has to beat, and it beats it by 0.0183 to 0.0163 on hit-rate@10.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-10 lg:grid-cols-3">
+            {rest.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+          <div className="mt-12 text-center">
+            <Link href="/catalog?sort=popular" className="btn btn-volt">
+              See all most rated
+            </Link>
+          </div>
+        </section>
+      </div>
+    </>
   )
 }
 
 function ServiceDown() {
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-20">
-      <p className="label mb-3">503</p>
-      <h1 className="text-[28px] font-semibold">The model service is not running.</h1>
-      <p className="mt-4 max-w-[60ch] text-[14px] leading-relaxed text-ink-2">
+      <p className="pill mb-4 bg-alert-tint text-alert">503</p>
+      <h1 className="display text-[36px] sm:text-[52px]">The model service is not running.</h1>
+      <p className="mt-5 max-w-[60ch] text-[16px] leading-relaxed text-fg-2">
         This storefront has no catalogue of its own. Products, categories and
         recommendations all come from the model service, so nothing renders
         until it is up.
       </p>
-      <pre className="mt-6 overflow-x-auto border border-rule bg-surface px-4 py-3 font-mono text-[12.5px]">
+      <pre className="mt-6 overflow-x-auto bg-band px-4 py-3 font-mono text-[13px] text-bg">
         python -m uvicorn ml_api.main:app --port 8001
       </pre>
     </div>

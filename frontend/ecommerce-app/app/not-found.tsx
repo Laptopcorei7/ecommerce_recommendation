@@ -11,24 +11,22 @@ import Link from 'next/link'
 export default function NotFound() {
   return (
     <div className="mx-auto max-w-[1400px] px-4">
-      <div className="border-b-2 border-rule-heavy pb-4 pt-8">
-        <p className="label mb-2">404</p>
-        <h1 className="text-[26px] font-semibold">No such page.</h1>
+      <div className="page-head">
+        <p className="pill mb-4">404</p>
+        <h1 className="display">No such page.</h1>
       </div>
-      <div className="py-10">
-        <p className="max-w-[58ch] text-[14px] leading-relaxed text-ink-2">
-          If you were looking for a product, the part number may not be in this
-          catalogue: it holds 62,222 items from the Electronics 5-core
-          benchmark, which is a subset of Amazon&apos;s full listing.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/catalog" className="btn">
-            Search the catalogue
-          </Link>
-          <Link href="/" className="btn btn-line">
-            Front page
-          </Link>
-        </div>
+      <p className="max-w-[58ch] text-[16px] leading-relaxed text-fg-2">
+        If you were looking for a product, the part number may not be in this
+        catalogue: it holds 62,222 items from the Electronics 5-core benchmark,
+        which is a subset of Amazon&apos;s full listing.
+      </p>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Link href="/catalog" className="btn">
+          Search the catalogue
+        </Link>
+        <Link href="/" className="btn btn-line">
+          Front page
+        </Link>
       </div>
     </div>
   )

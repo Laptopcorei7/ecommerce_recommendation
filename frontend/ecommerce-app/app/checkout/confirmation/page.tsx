@@ -24,7 +24,7 @@ export default function ConfirmationPage() {
   if (!ready) {
     return (
       <div className="mx-auto max-w-[1400px] px-4 py-16">
-        <p className="label">Loading</p>
+        <p className="meta">Loading</p>
       </div>
     )
   }
@@ -32,17 +32,17 @@ export default function ConfirmationPage() {
   if (!order) {
     return (
       <div className="mx-auto max-w-[1400px] px-4">
-        <div className="border-b-2 border-rule-heavy pb-4 pt-8">
-          <p className="label mb-2">Confirmation</p>
-          <h1 className="text-[26px] font-semibold">No order to show.</h1>
+        <div className="page-head">
+          <p className="meta mb-3">Confirmation</p>
+          <h1 className="display">No order to show.</h1>
         </div>
-        <p className="max-w-[58ch] py-8 text-[14px] leading-relaxed text-ink-2">
+        <p className="mb-8 max-w-[58ch] text-[16px] leading-relaxed text-fg-2">
           Orders are kept in this browser only. If you have cleared site data,
           opened a private window, or arrived here directly, there is nothing to
           display.
         </p>
         <Link href="/catalog" className="btn">
-          Browse the catalogue
+          Shop the catalogue
         </Link>
       </div>
     )
@@ -53,45 +53,43 @@ export default function ConfirmationPage() {
 
   return (
     <div className="mx-auto max-w-[1400px] px-4">
-      <div className="border-b-2 border-rule-heavy pb-5 pt-8">
-        <p className="label mb-2">Confirmation</p>
-        <h1 className="text-[26px] font-semibold">Order recorded</h1>
-        <p className="mt-3 max-w-[64ch] text-[13.5px] leading-relaxed text-ink-2">
+      <div className="page-head">
+        <p className="meta mb-3">Confirmation</p>
+        <h1 className="display">Order recorded</h1>
+        <p className="mt-5 max-w-[64ch] text-[16px] leading-relaxed text-fg-2">
           Written to this browser. No payment was taken, nothing will be
           dispatched, and no one has been notified. Placing an order is the last
           step this system can honestly perform.
         </p>
       </div>
 
-      <div className="grid gap-8 py-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-8 pb-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div>
-          <h2 className="label mb-3 border-b border-rule-heavy pb-1.5 text-ink">
+          <h2 className="display tnum mb-3 text-[18px]">
             {formatCount(count)} {count === 1 ? 'item' : 'items'}
           </h2>
-          {order.lines.map((line) => (
-            <div
-              key={line.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto_110px] items-baseline gap-4 border-b border-rule py-2.5"
-            >
-              <Link href={`/product/${line.id}`} className="min-w-0">
-                <span className="text-[13px] hover:text-signal">
+          <div className="space-y-1">
+            {order.lines.map((line) => (
+              <div
+                key={line.id}
+                className="grid grid-cols-[minmax(0,1fr)_auto_96px] items-baseline gap-4 bg-tile-soft px-4 py-3"
+              >
+                <Link href={`/product/${line.id}`} className="min-w-0 text-[14.5px] hover:underline">
                   {shortTitle(line.title, 90)}
+                </Link>
+                <span className="tnum text-[13px] text-fg-3">×{line.qty}</span>
+                <span className="tnum text-right text-[14.5px] font-bold">
+                  {formatPrice((line.price ?? 0) * line.qty) ?? (
+                    <span className="pill bg-bg">No price</span>
+                  )}
                 </span>
-              </Link>
-              <span className="font-mono tnum text-[12px] text-ink-3">
-                ×{line.qty}
-              </span>
-              <span className="text-right font-mono tnum text-[13px]">
-                {formatPrice((line.price ?? 0) * line.qty) ?? (
-                  <span className="label">no price</span>
-                )}
-              </span>
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
 
         <aside>
-          <dl className="border border-rule bg-paper-sunk">
+          <dl className="space-y-2 bg-tile p-5 text-[14.5px]">
             {[
               ['Order', order.id],
               ['Placed', placed.toLocaleString()],
@@ -103,19 +101,14 @@ export default function ConfirmationPage() {
               ['Payment', 'None taken'],
               ['Delivery', 'Not applicable'],
             ].map(([term, value]) => (
-              <div
-                key={term}
-                className="flex items-baseline justify-between gap-4 border-b border-rule px-4 py-2 last:border-b-0"
-              >
-                <dt className="label">{term}</dt>
-                <dd className="text-right font-mono tnum text-[12.5px] break-all">
-                  {value}
-                </dd>
+              <div key={term} className="flex items-baseline justify-between gap-4">
+                <dt className="text-fg-2">{term}</dt>
+                <dd className="tnum break-all text-right font-semibold">{value}</dd>
               </div>
             ))}
           </dl>
 
-          <Link href="/recommendations" className="btn btn-line mt-4 w-full">
+          <Link href="/recommendations" className="btn btn-volt mt-4 w-full whitespace-normal text-center">
             See what the model suggests next
           </Link>
         </aside>
