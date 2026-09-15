@@ -54,3 +54,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# ---- local reference captures ----
+/screenshots/
