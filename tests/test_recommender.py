@@ -172,3 +172,76 @@ def test_the_group_structure_is_learned_from_content(engine):
     unrated item from a user's own block must come out on top."""
     top = engine.recommend("USER00", top_n=1, alpha=0.0)[0][0]
     assert top in {"ITEM00", "ITEM01", "ITEM02", "ITEM03"}
+
+
+# --- score breakdown --------------------------------------------------------
+#
+# The storefront shows which half of the blend drove each placement, so the
+# halves have to be reported as what they actually are.
+
+def test_recommend_and_recommend_detailed_agree(engine):
+    """recommend() is written in terms of recommend_detailed(). If they ever
+    disagree, the storefront is explaining a ranking it is not showing."""
+    plain = engine.recommend("USER00", top_n=4)
+    detailed = engine.recommend_detailed("USER00", top_n=4)
+    assert [i for i, _ in plain] == [d["id"] for d in detailed]
+    for (_, score), d in zip(plain, detailed):
+        assert score == pytest.approx(d["score"])
+
+
+def test_the_halves_sum_to_the_score(engine):
+    """They are the weighted terms, not the raw ones, so the sum is the score
+    and the larger of the two is the half that decided the placement."""
+    for d in engine.recommend_detailed("USER00", top_n=4):
+        assert d["collaborative"] + d["content"] == pytest.approx(d["score"])
+
+
+def test_alpha_moves_weight_between_the_halves(engine):
+    at_one = engine.recommend_detailed("USER00", top_n=1, alpha=1.0)[0]
+    at_zero = engine.recommend_detailed("USER00", top_n=1, alpha=0.0)[0]
+    assert at_one["content"] == 0.0
+    assert at_zero["collaborative"] == 0.0
+
+
+def test_score_halves_are_standardized(engine):
+    """Blending two halves on different scales was the original bug: a
+    collaborative term spanning 4.0 was added to a content term spanning 0.028,
+    so the content half could not move the ranking at any alpha."""
+    pref, content, _ = engine.score_halves(0)
+    for half in (pref, content):
+        # Tolerances are float32-sized: the factors are stored as float32, so
+        # a mean of 3e-08 is exactly zero as far as this arithmetic goes.
+        assert half.mean() == pytest.approx(0.0, abs=1e-6)
+        assert half.std() == pytest.approx(1.0, abs=1e-6)
+
+
+# --- similar items ----------------------------------------------------------
+
+def test_similar_items_never_include_the_item_itself(engine):
+    """An item is trivially its own nearest neighbour, which is not a
+    recommendation."""
+    for item_id in ["ITEM00", "ITEM07"]:
+        assert item_id not in [i for i, _ in engine.similar_items(item_id, k=5)]
+
+
+def test_similar_items_are_ordered_by_similarity(engine):
+    scores = [s for _, s in engine.similar_items("ITEM00", k=4)]
+    assert scores == sorted(scores, reverse=True)
+
+
+def test_similar_items_respect_the_content_structure(engine):
+    """The fixture's similarity is strong within each half of the catalogue and
+    zero across it, so neighbours of an early item must stay in that half."""
+    neighbours = [i for i, _ in engine.similar_items("ITEM00", k=3)]
+    assert all(int(i[-2:]) < 4 for i in neighbours)
+
+
+def test_similar_items_caps_at_what_exists(engine):
+    """Asking for more neighbours than the matrix holds must not pad the result
+    with zeros or raise."""
+    assert len(engine.similar_items("ITEM00", k=99)) == 3
+
+
+def test_similar_items_rejects_an_unknown_item(engine):
+    with pytest.raises(KeyError):
+        engine.similar_items("NOT_AN_ITEM")

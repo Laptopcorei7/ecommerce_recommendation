@@ -114,22 +114,47 @@ class HybridRecommender:
 
     # ---------------------------------------------------------------- blend
 
-    def hybrid_scores(self, user_idx, alpha=None):
-        """Ranking score for every item, plus this user's rated indices."""
-        a = self.alpha if alpha is None else float(alpha)
+    def score_halves(self, user_idx, alpha=None):
+        """The two standardized halves of the ranking score, kept separate.
+
+        The blend is a weighted sum of these, so returning them lets a caller
+        report which half actually moved an item up the ranking instead of
+        inventing a reason for it. Both are z-scores over the catalogue, so
+        they are directly comparable to each other.
+        """
         rated_idx, rated_vals = self.rated_items(user_idx)
         pref = _standardize(self.preference_scores(user_idx))
         content = _standardize(self.content_scores(user_idx, rated_idx, rated_vals))
+        return pref, content, rated_idx
+
+    def hybrid_scores(self, user_idx, alpha=None):
+        """Ranking score for every item, plus this user's rated indices."""
+        a = self.alpha if alpha is None else float(alpha)
+        pref, content, rated_idx = self.score_halves(user_idx, alpha)
         return a * pref + (1.0 - a) * content, rated_idx
 
     # ---------------------------------------------------------------- public
 
     def recommend(self, user_id, top_n=10, alpha=None, exclude_rated=True):
         """Top-N item ids with scores, highest first."""
+        return [
+            (r["id"], r["score"])
+            for r in self.recommend_detailed(user_id, top_n, alpha, exclude_rated)
+        ]
+
+    def recommend_detailed(self, user_id, top_n=10, alpha=None, exclude_rated=True):
+        """Top-N with the two half-scores that produced each blended score.
+
+        Same ranking as recommend(), which is written in terms of this. The
+        extra fields exist so the storefront can show what drove a placement
+        rather than captioning it with invented copy.
+        """
         if user_id not in self.user_to_idx:
             raise KeyError(user_id)
         user_idx = self.user_to_idx[user_id]
-        scores, rated_idx = self.hybrid_scores(user_idx, alpha)
+        a = self.alpha if alpha is None else float(alpha)
+        pref, content, rated_idx = self.score_halves(user_idx, alpha)
+        scores = a * pref + (1.0 - a) * content
 
         excluded = 0
         if exclude_rated and len(rated_idx):
@@ -149,10 +174,37 @@ class HybridRecommender:
         part = np.argpartition(scores, -n)[-n:]
         order = part[np.argsort(scores[part])[::-1]]
         return [
-            (str(self.item_ids[i]), float(scores[i]))
+            {
+                "id": str(self.item_ids[i]),
+                "score": float(scores[i]),
+                # Weighted contributions, so the two sum to the score and the
+                # larger one is the half that decided the placement.
+                "collaborative": float(a * pref[i]),
+                "content": float((1.0 - a) * content[i]),
+            }
             for i in order
             if np.isfinite(scores[i])
         ]
+
+    def similar_items(self, item_id, k=8):
+        """Items nearest this one by content similarity, nearest first.
+
+        Reads the same item-item matrix the content half of the blend uses, so
+        'similar' on a product page means the same thing it means in the model.
+        """
+        idx = self.m["item_to_idx"].get(str(item_id))
+        if idx is None:
+            raise KeyError(item_id)
+        row = self._sim.getrow(idx)
+        cols, vals = row.indices, row.data
+        keep = cols != idx                       # an item is its own best match
+        cols, vals = cols[keep], vals[keep]
+        if len(cols) == 0:
+            return []
+        n = min(k, len(cols))
+        part = np.argpartition(vals, -n)[-n:]
+        order = part[np.argsort(vals[part])[::-1]]
+        return [(str(self.item_ids[cols[j]]), float(vals[j])) for j in order]
 
     def predict(self, user_idx, item_idx, alpha=None):
         """Predicted rating in [1, 5] for one user-item pair, for RMSE.

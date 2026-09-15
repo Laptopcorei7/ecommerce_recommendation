@@ -1,123 +1,299 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
 
-@custom-variant dark (&:is(.dark *));
+/* ============================================================================
+   ElectroHub — industrial supply catalogue
+
+   The reference points are McMaster-Carr and DigiKey: catalogues where density
+   is the aesthetic and nothing is decorative. Every rule below exists because
+   of something in the data.
+
+   Paper ground, not white. Every product photo in this catalogue is an Amazon
+   cutout on a pure white background. On a white page they dissolve; on warm
+   paper each one reads as a contained object.
+
+   No shadows and no radius. Separation comes from hairline rules, the way a
+   printed parts catalogue does it. A shadow implies a floating card, which
+   implies a marketing surface, which this is not.
+
+   Monospace carries data. Part numbers, prices, ratings, counts and model
+   scores are set in mono so they align in a column and read as measurements.
+   Prose is set in the sans.
+
+   Light only, on purpose. This is a paper aesthetic and a dark inversion of it
+   would be a different, weaker design rather than the same one at night.
+   ============================================================================ */
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  /* Ground and ink */
+  --paper: #f2f0ec;            /* page */
+  --paper-sunk: #e9e6e0;       /* inset wells, table stripes */
+  --surface: #ffffff;          /* image plates, input fields */
+  --ink: #16150f;              /* body text, primary actions */
+  --ink-2: #57544a;            /* secondary text */
+  --ink-3: #8b877a;            /* labels, metadata, disabled */
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  /* Rules. The whole layout is built from these. */
+  --rule: #d7d3c9;             /* hairline */
+  --rule-2: #bab5a8;           /* emphasis hairline */
+  --rule-heavy: #16150f;       /* section head underline */
+
+  /* One accent. Signal vermilion, used for actions and live state only,
+     never for decoration and never as a fill behind body text. */
+  --signal: #bf3d11;
+  --signal-hover: #a13209;
+  --signal-tint: #f7e9e3;
+
+  /* Data colours, for the score breakdown. Deliberately not a rainbow: two
+     halves means two colours. */
+  --collab: #1f5c4d;
+  --content: #8a6d1f;
+
+  --radius: 0;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-paper: var(--paper);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-2: var(--rule-2);
+  --color-rule-heavy: var(--rule-heavy);
+  --color-signal: var(--signal);
+  --color-signal-hover: var(--signal-hover);
+  --color-signal-tint: var(--signal-tint);
+  --color-collab: var(--collab);
+  --color-content: var(--content);
+
+  /* shadcn's token names, re-pointed at this palette so the handful of
+     components kept from components/ui inherit the design instead of
+     fighting it. */
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--ink);
+  --color-primary-foreground: var(--paper);
+  --color-secondary: var(--paper-sunk);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--paper-sunk);
+  --color-muted-foreground: var(--ink-3);
+  --color-accent: var(--paper-sunk);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--signal);
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--rule);
+  --color-input: var(--rule-2);
+  --color-ring: var(--ink);
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'SFMono-Regular', monospace;
+
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--rule);
   }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    background: var(--paper);
+    color: var(--ink);
+    /* 14px base. A supply catalogue is dense; 16px would set half as much
+       information on a screen and this data has a lot of it. */
+    font-size: 14px;
+    line-height: 1.5;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'kern' 1;
+  }
+
+  /* Nothing in this design is round. */
+  * {
+    border-radius: 0 !important;
+  }
+
+  ::selection {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Focus is a hard offset outline, matching the hairline geometry rather
+     than the soft ring shadcn ships. */
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 1px;
+  }
+
+  /* Numeric columns line up. This is why prices and ratings are mono. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* ---- the label ---------------------------------------------------------
+     The small uppercase caption that names a field or a section. Used
+     constantly; it is the connective tissue of a catalogue layout. */
+  .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ---- section heading ---------------------------------------------------
+     A heavy rule under a plain heading. No centring, no subtitle paragraph. */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 2px solid var(--rule-heavy);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-head h2 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  /* ---- image plate -------------------------------------------------------
+     Product photos are white cutouts. The plate gives each one a white field
+     with a hairline edge, so the object is contained rather than bleeding
+     into the paper. */
+  .plate {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .plate img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    mix-blend-mode: multiply;   /* kills the residual white box edge */
+  }
+
+  /* ---- buttons -----------------------------------------------------------
+     Two only: a solid ink action and a hairline secondary. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.85rem;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    cursor: pointer;
+    transition: background 90ms linear, color 90ms linear, border-color 90ms linear;
+    white-space: nowrap;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: var(--signal);
+    border-color: var(--signal);
+  }
+
+  .btn:disabled {
+    background: var(--paper-sunk);
+    border-color: var(--rule-2);
+    color: var(--ink-3);
+    cursor: not-allowed;
+  }
+
+  .btn-line {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--rule-2);
+  }
+
+  .btn-line:hover:not(:disabled) {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* ---- fields ------------------------------------------------------------ */
+  .field {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--rule-2);
+    padding: 0.5rem 0.65rem;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--ink);
+  }
+
+  .field::placeholder {
+    color: var(--ink-3);
+  }
+
+  .field:focus {
+    border-color: var(--ink);
+    outline: none;
+  }
+
+  /* ---- link with a rule on hover, not a colour change -------------------- */
+  .link {
+    box-shadow: inset 0 -1px 0 var(--rule-2);
+    transition: box-shadow 90ms linear, color 90ms linear;
+  }
+
+  .link:hover {
+    color: var(--signal);
+    box-shadow: inset 0 -1px 0 var(--signal);
+  }
+}
+
+/* A row that reveals its action on hover, used in the product lists. */
+@media (hover: hover) {
+  .row-reveal .reveal {
+    opacity: 0;
+    transition: opacity 90ms linear;
+  }
+
+  .row-reveal:hover .reveal,
+  .row-reveal:focus-within .reveal {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

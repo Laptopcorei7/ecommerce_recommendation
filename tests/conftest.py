@@ -112,16 +112,28 @@ def engine(model):
 
 @pytest.fixture
 def catalog_path(tmp_path):
+    """Product metadata shaped like the real thing, at toy scale.
+
+    The awkward parts of the real catalogue are represented on purpose, because
+    they are what the storefront has to survive: one product has no price (45.2%
+    of the real data does not), one has no image, and the items split across two
+    category paths so bucketing and filtering have something to do.
+    """
     path = tmp_path / "catalog.jsonl"
     with open(path, "w", encoding="utf-8") as fh:
         for i in range(N_ITEMS):
+            first_half = i < N_ITEMS // 2
             fh.write(json.dumps({
                 "id": "ITEM{:02d}".format(i),
-                "title": "Test Product {}".format(i),
-                "price": 10.0 + i,
-                "image": "https://example.invalid/{}.jpg".format(i),
-                "store": "Test Store",
-                "categories": ["Electronics"],
+                "title": "Test Product {} {}".format(
+                    i, "Wireless" if first_half else "Cable"),
+                # Item 3 is unpriced.
+                "price": None if i == 3 else 10.0 + i,
+                # Item 5 has no image.
+                "image": None if i == 5 else "https://example.invalid/{}.jpg".format(i),
+                "store": "Alpha Brand" if first_half else "Beta Brand",
+                "main_category": "All Electronics",
+                "categories": ["Electronics", "Home Audio" if first_half else "Cables"],
                 "average_rating": 4.5,
                 "rating_number": 100 + i,
             }) + "\n")

@@ -105,7 +105,7 @@ def test_error_names_every_broken_field_at_once(tmp_path):
 def test_loads_the_catalogue_keyed_by_item_id(catalog_path):
     catalog = load_catalog(catalog_path)
     assert len(catalog) == N_ITEMS
-    assert catalog["ITEM00"]["title"] == "Test Product 0"
+    assert catalog["ITEM00"]["title"].startswith("Test Product 0")
 
 
 def test_missing_catalogue_explains_how_to_build_one(tmp_path):
