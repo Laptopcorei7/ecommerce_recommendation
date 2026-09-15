@@ -45,7 +45,9 @@ export function CatalogBrowser({
   }
 
   return (
-    <div className="grid gap-8 pb-8 lg:grid-cols-[230px_minmax(0,1fr)]">
+    // minmax(0,1fr) on narrow screens too: an unsized column grows to the
+    // pill strip's full width and pushes the results off the right edge.
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8 pb-8 lg:grid-cols-[230px_minmax(0,1fr)]">
       {/* ---- category rail ---- */}
       <aside className="lg:sticky lg:top-[132px] lg:self-start">
         <h2 className="display mb-3 text-[15px]">Categories</h2>
